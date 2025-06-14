@@ -1,0 +1,19 @@
+{
+    // "clangd.arguments": [
+    //   "--query-driver=D:/ToolChain/arm-gnu-toolchain-14.2.rel1-mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-gcc.exe",  // 指定编译器路径
+    //   "--clang-tidy"
+    // ],
+    "VsCodeTaskButtons.tasks": [
+      {
+        "label": "$(notebook-move-down) Build",
+        "task": "Build", // 对应 tasks.json 中的 label: "Build"
+        "tooltip": "🛠️ Start the \"Build\" task"
+      },
+      {
+        "label": "$(notebook-move-down) Flash",
+        "task": "Flash", // 对应 tasks.json 中的 label: "Build"
+        "tooltip": "烧录固件到设备"
+      }
+    ],
+    "window.zoomLevel": 1
+  }
