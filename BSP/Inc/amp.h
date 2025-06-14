@@ -14,15 +14,17 @@
 #define AMP2_Times_X10		10
 #define AMP2_Times_X100	    100
 
-// DG408_IN_Channel
-#define	DG408_IN_Channel_S1     1
-#define	DG408_IN_Channel_S2     2
-#define	DG408_IN_Channel_S3     3
-#define	DG408_IN_Channel_S4     4
-#define	DG408_IN_Channel_S5     5
-#define	DG408_IN_Channel_S6     6
-#define	DG408_IN_Channel_S7     7
-#define	DG408_IN_Channel_S8     8
+typedef enum
+{
+    OUT,
+    LNA_OUT,
+    VREF,
+    VREF_700mV,
+    VREF_70mV,
+    VREF_9mV,
+    AGND,
+    Ele_Input,
+}   DG408_Mode_TypeDef;
 
 // AMP板工作模式
 #define AMP_Mode_A1_GND     1
@@ -53,7 +55,7 @@ extern uint8_t    AMP2_Times_Sign;
 
 void Set_AMP_Second_Magnification(uint8_t times);
 void Set_AMP_LPF(uint8_t AMP_LPF_Mode);
-void Set_DG408_IN(uint8_t DG408_IN_Channel);
+void Set_DG408_IN(DG408_Mode_TypeDef DG408_IN_Channel);
 void AMP_Setup(AMP_Parameters_TypeDef *amp_param);
 
 

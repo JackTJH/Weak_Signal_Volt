@@ -95,58 +95,58 @@ void Set_AMP_LPF(uint8_t AMP_LPF_Mode)
 //	S8	接入电流检测电路
 //
 //-----------------------------------------------------------------//
-void Set_DG408_IN(uint8_t DG408_IN_Channel)
+void Set_DG408_IN(DG408_Mode_TypeDef DG408_IN_Channel)
 {
 	switch(DG408_IN_Channel) {
-		case DG408_IN_Channel_S1:
+		case OUT:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_RESET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S1;
+			DG408_IN_Channel_Sign = OUT;
 			break;
-		case DG408_IN_Channel_S2:
+		case LNA_OUT:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_RESET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S2;
+			DG408_IN_Channel_Sign = LNA_OUT;
 			break;
-		case DG408_IN_Channel_S3:
+		case VREF:
 			// V1V2电压过大，不进行设置	V3电路板设置限压可以设置
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_RESET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S3;
+			DG408_IN_Channel_Sign = VREF;
 			break;
-		case DG408_IN_Channel_S4:
+		case VREF_700mV:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_RESET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S4;
+			DG408_IN_Channel_Sign = VREF_700mV;
 			break;
-		case DG408_IN_Channel_S5:
+		case VREF_70mV:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_SET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S5;
+			DG408_IN_Channel_Sign = VREF_70mV;
 			break;
-		case DG408_IN_Channel_S6:
+		case VREF_9mV:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_SET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S6;
+			DG408_IN_Channel_Sign = VREF_9mV;
 			break;
-		case DG408_IN_Channel_S7:
+		case AGND:
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_SET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S7;
+			DG408_IN_Channel_Sign = AGND;
 			break;
-		case DG408_IN_Channel_S8:
+		case Ele_Input:
 			// 暂时不进行设置
 			HAL_GPIO_WritePin(AMP_A0_GPIO_Port, AMP_A0_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A1_GPIO_Port, AMP_A1_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(AMP_A2_GPIO_Port, AMP_A2_Pin, GPIO_PIN_SET);
-			DG408_IN_Channel_Sign = DG408_IN_Channel_S8;
+			DG408_IN_Channel_Sign = Ele_Input;
 			break;
 		default: break;
 	}
