@@ -192,7 +192,7 @@ int main(void)
         lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_100Hz");
       default: break;
     }
-    Set_DG408_IN(AMP_Parameters.dg408_in_channel);  
+    Set_AMP_Mode(AMP_Parameters.dg408_in_channel);  
     Set_AMP_Second_Magnification(AMP_Parameters.amp_second_magnification);
     Set_AMP_LPF(AMP_Parameters.amp_lpf_mode);  
     ADS1256_Read_Data_ISR();

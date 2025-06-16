@@ -79,6 +79,12 @@ void Error_Handler(void);
 #define ALPF_S3_GPIO_Port GPIOF
 #define LCD_RES_Pin GPIO_PIN_1
 #define LCD_RES_GPIO_Port GPIOG
+#define RE4_Pin GPIO_PIN_10
+#define RE4_GPIO_Port GPIOB
+#define RE3_Pin GPIO_PIN_12
+#define RE3_GPIO_Port GPIOB
+#define RE2_Pin GPIO_PIN_13
+#define RE2_GPIO_Port GPIOB
 #define BUZZER_Pin GPIO_PIN_15
 #define BUZZER_GPIO_Port GPIOB
 #define LCD_BLK_Pin GPIO_PIN_11
