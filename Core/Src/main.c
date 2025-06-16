@@ -44,7 +44,7 @@ AMP_Parameters_TypeDef AMP_Parameters =
 {
     .amp_lpf_mode = AMP_LPF_Mode_0Hz,  
     .amp_second_magnification = AMP2_Times_X1, 
-    .dg408_in_channel = OUT, 
+    .dg408_in_channel = VREF_70mV, 
 };
 
 /* USER CODE END PTD */
