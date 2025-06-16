@@ -53,9 +53,10 @@ typedef struct
 extern uint8_t    AMP_LPF_Mode_Sig;
 extern uint8_t    AMP2_Times_Sign;
 
+void Set_DG408_IN(DG408_Mode_TypeDef DG408_IN_Channel);
+void Set_AMP_Mode(DG408_Mode_TypeDef DG408_IN_Channel);
 void Set_AMP_Second_Magnification(uint8_t times);
 void Set_AMP_LPF(uint8_t AMP_LPF_Mode);
-void Set_DG408_IN(DG408_Mode_TypeDef DG408_IN_Channel);
 void AMP_Setup(AMP_Parameters_TypeDef *amp_param);
 
 
