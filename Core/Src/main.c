@@ -197,9 +197,9 @@ int main(void)
     Set_AMP_LPF(AMP_Parameters.amp_lpf_mode);  
     ADS1256_Read_Data_ISR();
 
-
     if(TimeBaseGetFlag(BASE_10MS))
     {
+      TimeBaseClearFlag(BASE_10MS);
       Key_Detect();
     }
     if(TimeBaseGetFlag(BASE_200MS))
