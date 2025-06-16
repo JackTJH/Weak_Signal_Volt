@@ -25,7 +25,7 @@ ADS1256_InitParams_t ADS1256_InitParams =
   .ClockOutRateSetting                  = CLKOUT_OFF,                     // 输出时钟关闭       
   .SensorDetectCurrentSources           = DETECT_OFF,                     // 外部电路检测关闭  
   .ProgrammableGainAmplifierSetting     = PGA_1,                          // 可编程外部增益放大器设置为1倍增益
-  .DataRateSetting                      = DRATE_15KHz,                    // 设置数据输出速率为100Hz
+  .DataRateSetting                      = DRATE_30KHz,                    // 设置数据输出速率为100Hz
   .VREF                                 = 2.5471                          // 参考电压设置为2.5471V
 };
 
@@ -132,10 +132,9 @@ int32_t ADS1256_ReadAdcData_Original(uint8_t positiveCh, uint8_t negativeCh,ADS1
     
     CS_0(ads);
     HAL_SPI_Receive(ads->hspix, data, 3, 10);
-    CS_1(ads);
-
     sum = (unsigned int)(data[0]<<16)|(data[1]<<8)|data[2];
 	  sum |= (sum & 0x800000) ? 0xFF000000 : 0;
+    CS_1(ads);
 
     return sum; // 返回原始数据
 }
@@ -145,12 +144,15 @@ int32_t ADS1256_ReadAdcData_Original_Sig(uint8_t positiveCh, uint8_t negativeCh,
     int32_t sum;
     uint8_t data[3];
 
+    while(ADS1256_Read_DRDY != GPIO_PIN_RESET);
     setDIFFChannel(positiveCh, negativeCh,ads);
-    writeCMD(CMD_SYNC, ads); // Start read data continuous.
-    writeCMD(CMD_WAKEUP, ads); // Start read data continuous.
-    writeCMD(CMD_RDATA, ads); // Start read data continuous.
+    writeCMD(CMD_SYNC,ads);
+    while(ADS1256_Read_DRDY != GPIO_PIN_SET);
+    writeCMD(CMD_WAKEUP,ads);
+    writeCMD(CMD_RDATA, ads); 
+    delay_us(10);
     CS_0(ads);
-    HAL_SPI_Receive(ads->hspix, data, 3, 10);
+    HAL_SPI_Receive(ads->hspix, data, 3, 1000);
     CS_1(ads);
 
     sum = (unsigned int)(data[0]<<16)|(data[1]<<8)|data[2];
@@ -227,7 +229,7 @@ void ADS1256_Read_Data_ISR(void)
 
   if(ADS1256_Read_DRDY == GPIO_PIN_RESET) // 检查DRDY引脚状态
   {
-    ADS1256_DATA.OriginalData = ADS1256_ReadAdcData_Original(AIN0,AINCOM,&ads); // 读取原始数据
+    ADS1256_DATA.OriginalData = ADS1256_ReadAdcData_Original_Sig(AIN0,AINCOM,&ads); // 读取原始数据
     ADS1256_DATA.Voltage = ADS1256_ADCDataConvert(
             ADS1256_DATA.OriginalData,
             ADS1256_InitParams.VREF,  // 参考电压 
@@ -235,14 +237,6 @@ void ADS1256_Read_Data_ISR(void)
     );
     printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
   }
-
-  // ADS1256_DATA.OriginalData = ADS1256_ReadAdcData_Original_Sig(AIN0,AINCOM,&ads); // 读取原始数据
-  // ADS1256_DATA.Voltage = ADS1256_ADCDataConvert(
-  //           ADS1256_DATA.OriginalData,
-  //           ADS1256_InitParams.VREF,  // 参考电压 
-  //           1<<ADS1256_InitParams.ProgrammableGainAmplifierSetting// PGA增益倍数 (PGA_1 = 1倍增益)
-  // );
-  // printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
 }
 
 
