@@ -117,9 +117,7 @@ int main(void)
   {
     // BEEP_Short();
   }
-
   lcd_init();
-
   HAL_TIM_Base_Start_IT(&htim6);
   printf("All Initial is OK\r\n");
 

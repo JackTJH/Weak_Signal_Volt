@@ -144,7 +144,6 @@ int32_t ADS1256_ReadAdcData_Original_Sig(uint8_t positiveCh, uint8_t negativeCh,
     int32_t sum;
     uint8_t data[3];
 
-    while(ADS1256_Read_DRDY != GPIO_PIN_RESET);
     setDIFFChannel(positiveCh, negativeCh,ads);
     writeCMD(CMD_SYNC,ads);
     while(ADS1256_Read_DRDY != GPIO_PIN_SET);
@@ -222,20 +221,73 @@ uint8_t ADS1256_Init(void)
   // HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
 
+// 滤波相关变量
+#define FILTER_WINDOW_SIZE 5
+// 中值滤波函数
+uint32_t ADS1256_MedianFilter(uint32_t new_data)
+{
+  static uint32_t filter_buffer[FILTER_WINDOW_SIZE] = {0};
+  static uint8_t filter_index = 0;
+  static uint8_t filter_filled = 0;
+
+  // 将新数据存入缓冲区
+  filter_buffer[filter_index] = new_data;
+  filter_index = (filter_index + 1) % FILTER_WINDOW_SIZE;
+  
+  if(!filter_filled && filter_index == 0)
+  {
+      filter_filled = 1;
+  }
+  
+  // 如果缓冲区未满，直接返回新数据
+  if(!filter_filled)
+  {
+      return new_data;
+  }
+  
+  // 复制缓冲区数据进行排序
+  uint32_t temp_array[FILTER_WINDOW_SIZE];
+  for(int i = 0; i < FILTER_WINDOW_SIZE; i++)
+  {
+      temp_array[i] = filter_buffer[i];
+  }
+  
+  // 简单冒泡排序
+  for(int i = 0; i < FILTER_WINDOW_SIZE - 1; i++)
+  {
+      for(int j = 0; j < FILTER_WINDOW_SIZE - 1 - i; j++)
+      {
+          if(temp_array[j] > temp_array[j + 1])
+          {
+              uint32_t temp = temp_array[j];
+              temp_array[j] = temp_array[j + 1];
+              temp_array[j + 1] = temp;
+          }
+      }
+  }
+  
+  // 返回中值
+  return temp_array[FILTER_WINDOW_SIZE / 2];
+}
+
+
 ADS1256_DATA_t ADS1256_DATA = {0};
 
 void ADS1256_Read_Data_ISR(void)
 {
-
   if(ADS1256_Read_DRDY == GPIO_PIN_RESET) // 检查DRDY引脚状态
   {
-    ADS1256_DATA.OriginalData = ADS1256_ReadAdcData_Original_Sig(AIN0,AINCOM,&ads); // 读取原始数据
-    ADS1256_DATA.Voltage = ADS1256_ADCDataConvert(
-            ADS1256_DATA.OriginalData,
-            ADS1256_InitParams.VREF,  // 参考电压 
-            1<<ADS1256_InitParams.ProgrammableGainAmplifierSetting// PGA增益倍数 (PGA_1 = 1倍增益)
-    );
-    printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
+      uint32_t raw_data = ADS1256_ReadAdcData_Original_Sig(AIN0,AINCOM,&ads); // 读取原始数据
+      
+      // 应用中值滤波
+      ADS1256_DATA.OriginalData = ADS1256_MedianFilter(raw_data);
+      
+      ADS1256_DATA.Voltage = ADS1256_ADCDataConvert(
+              ADS1256_DATA.OriginalData,
+              ADS1256_InitParams.VREF,  // 参考电压 
+              1<<ADS1256_InitParams.ProgrammableGainAmplifierSetting// PGA增益倍数 (PGA_1 = 1倍增益)
+      );
+      printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
   }
 }
 
