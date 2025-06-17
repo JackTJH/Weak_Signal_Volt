@@ -118,7 +118,7 @@ int main(void)
     // BEEP_Short();
   }
   lcd_init();
-  HAL_TIM_Base_Start_IT(&htim6);
+  MultTimer_Init();
   printf("All Initial is OK\r\n");
 
   /* USER CODE END 2 */
@@ -131,85 +131,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    switch (Global_Key_Val) 
-    {
-      case Key_Val_K13:
-        AMP_Parameters.dg408_in_channel = OUT; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_       OUT");
-      break;
-      case Key_Val_K14:
-        AMP_Parameters.dg408_in_channel = LNA_OUT; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_   LNA_OUT");
-      break;
-      case Key_Val_K15:
-        AMP_Parameters.dg408_in_channel = VREF; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      VREF");
-      break;
-      case Key_Val_K16:
-        AMP_Parameters.dg408_in_channel = VREF_700mV; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
-      break;
-      case Key_Val_K9:
-        AMP_Parameters.dg408_in_channel = VREF_70mV; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ VREF_70mV");
-      break;
-      case Key_Val_K10:
-        AMP_Parameters.dg408_in_channel = VREF_9mV; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_  VREF_9mV");
-      break;
-      case Key_Val_K11:
-        AMP_Parameters.dg408_in_channel = AGND; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      AGND");
-      break;
-      case Key_Val_K12:
-        AMP_Parameters.dg408_in_channel = Ele_Input; 
-        lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ Ele_Input");
-      break;
-      case Key_Val_K5:
-        AMP_Parameters.amp_second_magnification = AMP2_Times_X1; 
-        lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X1  ");
-      break;
-      case Key_Val_K6:
-        AMP_Parameters.amp_second_magnification = AMP2_Times_X10; 
-        lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X10 ");
-      break;
-      case Key_Val_K7:
-        AMP_Parameters.amp_second_magnification = AMP2_Times_X100; 
-        lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X100");
-      break;
-      case Key_Val_K1:
-        AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_0Hz; 
-        lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_  0Hz");
-      break;
-      case Key_Val_K2:
-        AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_35Hz; 
-        lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_ 35Hz");
-      break;
-      case Key_Val_K3:
-        AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_100Hz; 
-        lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_100Hz");
-      default: break;
-    }
-    Set_AMP_Mode(AMP_Parameters.dg408_in_channel);  
-    Set_AMP_Second_Magnification(AMP_Parameters.amp_second_magnification);
-    Set_AMP_LPF(AMP_Parameters.amp_lpf_mode);  
-    ADS1256_Read_Data_ISR();
-
-    if(TimeBaseGetFlag(BASE_10MS))
-    {
-      TimeBaseClearFlag(BASE_10MS);
-      Key_Detect();
-    }
-    if(TimeBaseGetFlag(BASE_200MS))
-    {
-      TimeBaseClearFlag(BASE_200MS);
-      lcd_printf(0,0,Word_Size_32,BLUE,WHITE,"ADS1256_Voltage:%.5lfmV",ADS1256_DATA.Voltage*1000);
-    }
-    if(TimeBaseGetFlag(BASE_1000MS))
-    {
-      TimeBaseClearFlag(BASE_1000MS);  
-      HAL_GPIO_TogglePin(BOARD_LED_GPIO_Port, BOARD_LED_Pin);  
-    }
+    MultiTimer_TaskHandler();  // 处理定时器任务 
   }
   /* USER CODE END 3 */
 }
@@ -266,7 +188,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if(htim->Instance == TIM6)
   {
-    TimeBaseUpdata();
+    MultiTimer_Update();  
   }
 }
 

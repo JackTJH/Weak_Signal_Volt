@@ -2,25 +2,44 @@
 #define __MY_TIMER_H
 
 #include "main.h"
+#include <stdint.h>
+#include "stm32f4xx_hal_tim.h"
+#include "tim.h"
 
 typedef enum
 {
-    BASE_1MS = 0u,
-    BASE_10MS,
-    BASE_20MS,
-    BASE_40MS,
-    BASE_50MS,
-    BASE_100MS,
-    BASE_200MS,
-    BASE_500MS,
-    BASE_1000MS,
-    BASE_NUM,
-}time_base_e;
+    TIMER_1MS = 0,
+    TIMER_10MS,
+    TIMER_200MS,
+    TIMER_1S,
+    TIMER_MAX_NUM
+} TimerType_e;
 
-uint16_t TimeBaseGetFlag(time_base_e base);
-void TimeBaseSetFlag(time_base_e base);
-void TimeBaseClearFlag(time_base_e base);
-void TimeBaseUpdata(void);
+typedef enum
+{
+    TIMER_IDLE = 0,
+    TIMER_RUNNING,
+    TIMER_EXPIRED
+} TimerStatus_e;
+
+typedef struct
+{
+    uint32_t period;
+    uint32_t counter;
+    uint8_t flag;
+    TimerStatus_e status;
+} Timer_t;
+
+typedef struct
+{
+    Timer_t timers[TIMER_MAX_NUM];
+    TIM_HandleTypeDef *htim;
+} MultTimer_t;
+
+
+void MultTimer_Init(void);
+void MultiTimer_Update(void);
+void MultiTimer_TaskHandler(void);
 
 
 #endif
