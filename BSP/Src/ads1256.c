@@ -139,6 +139,7 @@ int32_t ADS1256_ReadAdcData_Original(uint8_t positiveCh, uint8_t negativeCh,ADS1
     return sum; // 返回原始数据
 }
 
+//这个使用不了莫名其妙会死机
 int32_t ADS1256_ReadAdcData_Original_Sig(uint8_t positiveCh, uint8_t negativeCh,ADS125X_t *ads)
 {
     int32_t sum;
@@ -277,7 +278,7 @@ void ADS1256_Read_Data_ISR(void)
 {
   if(ADS1256_Read_DRDY == GPIO_PIN_RESET) // 检查DRDY引脚状态
   {
-      uint32_t raw_data = ADS1256_ReadAdcData_Original_Sig(AIN0,AINCOM,&ads); // 读取原始数据
+      uint32_t raw_data = ADS1256_ReadAdcData_Original(AIN0,AINCOM,&ads); // 读取原始数据
       
       // 应用中值滤波
       ADS1256_DATA.OriginalData = ADS1256_MedianFilter(raw_data);
