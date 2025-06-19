@@ -130,6 +130,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // ADS1256_Read_Data_ISR();
 
     MultiTimer_TaskHandler();  // 处理定时器任务 
   }

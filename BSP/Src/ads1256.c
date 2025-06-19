@@ -21,12 +21,13 @@ ADS1256_InitParams_t ADS1256_InitParams =
   .DataOutputBitOrder                   = MSB_FRIST,                      // 数据输出位序，MSB方式输出数据
   .AutoCalibration                      = ACAL_ON,                        // 自校准功能打开
   .AnalogInputBufferEnable              = BUFEN_ON,                       // 输入缓冲器打开    
-  .InputMultiplexerControl              = POSITIVE_AIN0|NEGTIVE_AINCOM,   // 输入通道选择，AINCOM作为负输入端，单端输入模式      
+  .InputMultiplexerControl              = POSITIVE_AIN0|NEGTIVE_AIN1,     // 输入通道选择，AINCOM作为负输入端，单端输入模式      
   .ClockOutRateSetting                  = CLKOUT_OFF,                     // 输出时钟关闭       
   .SensorDetectCurrentSources           = DETECT_OFF,                     // 外部电路检测关闭  
-  .ProgrammableGainAmplifierSetting     = PGA_1,                          // 可编程外部增益放大器设置为1倍增益
-  .DataRateSetting                      = DRATE_30KHz,                    // 设置数据输出速率为100Hz
-  .VREF                                 = 2.5471                          // 参考电压设置为2.5471V
+  .ProgrammableGainAmplifierSetting     = PGA_2,                          // 可编程外部增益放大器设置为1倍增益
+  .DataRateSetting                      = DRATE_1KHz,                     // 设置数据输出速率为100Hz
+  // .VREF                                 = 2.5360                          // 参考电压设置为2.5360V实际电压表测出来的值（这个参考电压算出来值与实际贴切有差距）
+  .VREF                                 = 2.5166                          // 参考电压设置为2.5166V（这个参考电压算出来值与实际贴切）      
 };
 
 void CS_1(ADS125X_t *ads)
@@ -278,7 +279,7 @@ void ADS1256_Read_Data_ISR(void)
 {
   if(ADS1256_Read_DRDY == GPIO_PIN_RESET) // 检查DRDY引脚状态
   {
-      uint32_t raw_data = ADS1256_ReadAdcData_Original(AIN0,AINCOM,&ads); // 读取原始数据
+      uint32_t raw_data = ADS1256_ReadAdcData_Original(AIN0,AIN1,&ads); // 读取原始数据
       
       // 应用中值滤波
       ADS1256_DATA.OriginalData = ADS1256_MedianFilter(raw_data);
@@ -290,6 +291,19 @@ void ADS1256_Read_Data_ISR(void)
       );
       printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
   }
+
+  //不滤波的方式
+
+  // if(ADS1256_Read_DRDY == GPIO_PIN_RESET) // 检查DRDY引脚状态
+  // {
+  //     ADS1256_DATA.OriginalData = ADS1256_ReadAdcData_Original(AIN0,AINCOM,&ads); // 读取原始数据
+  //     ADS1256_DATA.Voltage = ADS1256_ADCDataConvert(
+  //             ADS1256_DATA.OriginalData,
+  //             ADS1256_InitParams.VREF,  // 参考电压 
+  //             1<<ADS1256_InitParams.ProgrammableGainAmplifierSetting// PGA增益倍数 (PGA_1 = 1倍增益)
+  //     );
+  //     printf("ADS1256_Ori_data,ADS1256_Voltage:%d,%lf\r\n", ADS1256_DATA.OriginalData,ADS1256_DATA.Voltage);
+  // }
 }
 
 
