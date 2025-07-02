@@ -119,6 +119,8 @@ int main(void)
   }
   lcd_init();
   MultTimer_Init();
+  // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
+
   printf("All Initial is OK\r\n");
 
   /* USER CODE END 2 */
