@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "beep.h"
+#include "spi.h"
 
 ADS1256_DATA_t ADS1256_DATA = {0};
 
@@ -67,8 +68,8 @@ void hardRESET(ADS125X_t *ads)
 
 void ADS1256_Write_Bit(uint8_t data,ADS125X_t *ads)
 {
-    HAL_SPI_Transmit(ads->hspix, &data, 1, HAL_MAX_DELAY);
-    // HAL_SPI_Transmit_DMA(ads->hspix, &data, 1);
+    // HAL_SPI_Transmit(ads->hspix, &data, 1, HAL_MAX_DELAY);
+    HAL_SPI_Transmit_DMA(ads->hspix, &data, 1);
 
 }
 
@@ -250,8 +251,8 @@ void ADS1256_Init(void)
     //实测发现要想正确读到数据必须加延时和DRDY
     delay_us(10);
     ADS1256_WaitDRDY();
-    ADS1256_Read_Reg(REG_STATUS,read_Reg,sizeof(read_Reg),&ads);
-    printf("After_Write_Reg: %X %X %X %X\r\n", read_Reg[0], read_Reg[1], read_Reg[2], read_Reg[3]);
+    // ADS1256_Read_Reg(REG_STATUS,read_Reg,sizeof(read_Reg),&ads);
+    // printf("After_Write_Reg: %X %X %X %X\r\n", read_Reg[0], read_Reg[1], read_Reg[2], read_Reg[3]);
 
     //配置为差分输入模式,由于控制板AINCOM没有接入GND这里只能选择差分输入
     ADS1256_StartScan(3);
@@ -398,7 +399,8 @@ static int32_t ADS1256_ReadData(void)
 
     CS_0(&ads);	/* SPI片选 = 0 */
     // 发送读数据命令
-    HAL_SPI_Transmit(ads.hspix, &cmd, 1, HAL_MAX_DELAY);
+    // HAL_SPI_Transmit(ads.hspix, &cmd, 1, HAL_MAX_DELAY);
+    HAL_SPI_Transmit_DMA(ads.hspix, &cmd, 1);
 
     // 必须延迟才能读取芯片返回数据
     ADS1256_DelayDATA();
