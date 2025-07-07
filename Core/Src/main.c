@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -36,6 +37,7 @@
 #include "my_timer.h"
 #include "pannelkey.h"
 #include "arm_math.h"
+#include "00_j_vofa_uart.h"
 
 
 /* USER CODE END Includes */
@@ -110,6 +112,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
   MX_TIM7_Init();
@@ -119,6 +122,9 @@ int main(void)
 
   ADS1256_Init();
   AMP_Setup(&AMP_Parameters);
+  HAL_UART_Transmit_DMA(&huart1,"Hello\r\n",sizeof("Hello\r\n"));
+  while (huart1.gState != HAL_UART_STATE_READY) {}
+
   // lcd_init();
   // MultTimer_Init();
   printf("All Initial is OK\r\n");
@@ -132,12 +138,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
     if(ADS1256_DATA.ReadOver)
     {
       ADS1256_DATA.ReadOver = 0;
       ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
       ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2532400) / 4194303);
-      printf("Voltage: %.2f\r\n", ADS1256_DATA.volt[0] / 1000.0);
+      float voltage = ADS1256_DATA.volt[0] / 1000.0;
+      Vofa_JustFloat_Send(&huart1, &voltage, 1);
     }
   }
   /* USER CODE END 3 */
@@ -160,11 +168,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;

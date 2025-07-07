@@ -68,6 +68,8 @@ void hardRESET(ADS125X_t *ads)
 void ADS1256_Write_Bit(uint8_t data,ADS125X_t *ads)
 {
     HAL_SPI_Transmit(ads->hspix, &data, 1, HAL_MAX_DELAY);
+    // HAL_SPI_Transmit_DMA(ads->hspix, &data, 1);
+
 }
 
 void ADS1256_Write_Reg(uint8_t reg_addr,uint8_t *Write_Buf,uint8_t len,ADS125X_t *ads)
@@ -85,6 +87,7 @@ void ADS1256_Write_Reg(uint8_t reg_addr,uint8_t *Write_Buf,uint8_t len,ADS125X_t
 void ADS1256_Read_Bit(uint8_t *data,ADS125X_t *ads)
 {
     HAL_SPI_Receive(ads->hspix, data, 1, HAL_MAX_DELAY);
+    // HAL_SPI_Receive_DMA(ads->hspix, data, 1);
 }
 
 void ADS1256_Read_Reg(uint8_t reg_addr,uint8_t *Read_Buf,uint8_t len,ADS125X_t *ads)
@@ -221,7 +224,7 @@ void ADS1256_Init(void)
         else
         {
             printf("Ok, ASD1256 Chip ID = 0x%X\r\n", id);
-            BEEP_Short();
+            // BEEP_Short();
         }
     }
     ADS1256_StopScan(); // 停止 DRDY 中断
