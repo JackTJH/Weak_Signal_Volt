@@ -94,6 +94,8 @@ void MultiTimer_Stop(TimerType_e timer_type)
     }
 }
 extern AMP_Parameters_TypeDef AMP_Parameters;
+#define FFT_LENGTH 1024 
+uint16_t adc_buff[FFT_LENGTH];
 
 // 定时器任务处理函数
 void MultiTimer_TaskHandler(void)
@@ -178,7 +180,7 @@ void MultiTimer_TaskHandler(void)
     if(MultiTimer_IsExpired(TIMER_200MS))
     {
         MultiTimer_ClearFlag(TIMER_200MS);
-        lcd_printf(0,0,Word_Size_32,BLUE,WHITE,"ADS1256_Voltage:%.5lfmV",ADS1256_DATA.Voltage*1000);
+        // lcd_printf(0,0,Word_Size_32,BLUE,WHITE,"ADS1256_Voltage:%.5lfmV",ADS1256_DATA.Voltage*1000);
     }
     
     // 1s任务处理

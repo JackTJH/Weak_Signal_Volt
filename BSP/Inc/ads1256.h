@@ -6,6 +6,9 @@
 #include "spi.h"
 
 
+#define CH_NUM 4//差分是4路，单端是8路
+
+
 #define ADS1256_Write_CS_L  HAL_GPIO_WritePin(ADS1256_CS_GPIO_Port,ADS1256_CS_Pin,GPIO_PIN_RESET)
 #define ADS1256_Write_CS_H  HAL_GPIO_WritePin(ADS1256_CS_GPIO_Port,ADS1256_CS_Pin,GPIO_PIN_SET)
 #define ADS1256_Read_DRDY   HAL_GPIO_ReadPin(ADS1256_DRDY_GPIO_Port,ADS1256_DRDY_Pin)
@@ -167,16 +170,21 @@ typedef struct
 
 typedef struct 
 {
-    uint32_t OriginalData;  // 原始数据
-    double   Voltage;       // 电压值
+	int32_t AdcNow[8];			/* 8路ADC采集结果（实时）有符号数 */
+	uint8_t Channel;			/* 当前通道 */
+	uint8_t ScanMode;			/* 扫描模式，0表示单端8路， 1表示差分4路 */
+	uint8_t ReadOver;
+	int32_t adc[8];
+	int32_t volt[8];
+	double Voltage;			/* 电压值，单位V */
+
 }ADS1256_DATA_t;
 
 
 extern ADS1256_DATA_t ADS1256_DATA;
 
-uint8_t ADS1256_Init(void); 
-void ADS1256_GETADC_Continuous(void);
+void ADS1256_Init(void);
 void ADS1256_Read_Data_ISR(void);
-
+int32_t ADS1256_GetAdc(uint8_t _ch);
 
 #endif

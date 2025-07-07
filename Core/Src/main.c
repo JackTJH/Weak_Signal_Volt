@@ -28,12 +28,15 @@
 /* USER CODE BEGIN Includes */
 
 #include "amp.h"
+#include <stdint.h>
 #include <stdio.h>
 #include "beep.h"
 #include "ads1256.h"
 #include "atk_md0350.h"
 #include "my_timer.h"
 #include "pannelkey.h"
+#include "arm_math.h"
+
 
 /* USER CODE END Includes */
 
@@ -44,8 +47,10 @@ AMP_Parameters_TypeDef AMP_Parameters =
 {
     .amp_lpf_mode = AMP_LPF_Mode_0Hz,  
     .amp_second_magnification = AMP2_Times_X1, 
-    .dg408_in_channel = VREF_70mV, 
+    .dg408_in_channel = LNA_OUT, 
 };
+
+extern ADS125X_t ads;
 
 /* USER CODE END PTD */
 
@@ -112,15 +117,10 @@ int main(void)
   MX_FSMC_Init();
   /* USER CODE BEGIN 2 */
 
-  AMP_Setup(&AMP_Parameters); 
-  if(ADS1256_Init())
-  {
-    // BEEP_Short();
-  }
-  lcd_init();
-  MultTimer_Init();
-  // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
-
+  ADS1256_Init();
+  AMP_Setup(&AMP_Parameters);
+  // lcd_init();
+  // MultTimer_Init();
   printf("All Initial is OK\r\n");
 
   /* USER CODE END 2 */
@@ -132,9 +132,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // ADS1256_Read_Data_ISR();
-
-    MultiTimer_TaskHandler();  // 处理定时器任务 
+    if(ADS1256_DATA.ReadOver)
+    {
+      ADS1256_DATA.ReadOver = 0;
+      ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
+      ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2532400) / 4194303);
+      printf("Voltage: %.2f\r\n", ADS1256_DATA.volt[0] / 1000.0);
+    }
   }
   /* USER CODE END 3 */
 }
@@ -192,6 +196,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if(htim->Instance == TIM6)
   {
     MultiTimer_Update();  
+  }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == ADS1256_DRDY_Pin)
+  {
+    ADS1256_Read_Data_ISR();
   }
 }
 
