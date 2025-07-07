@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "dma.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -112,7 +111,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
   MX_TIM7_Init();
@@ -122,8 +120,8 @@ int main(void)
 
   ADS1256_Init();
   AMP_Setup(&AMP_Parameters);
-  HAL_UART_Transmit_DMA(&huart1,"Hello\r\n",sizeof("Hello\r\n"));
-  while (huart1.gState != HAL_UART_STATE_READY) {}
+  // HAL_UART_Transmit_DMA(&huart1,"Hello\r\n",sizeof("Hello\r\n"));
+  // while (huart1.gState != HAL_UART_STATE_READY) {}
 
   // lcd_init();
   // MultTimer_Init();
@@ -144,7 +142,7 @@ int main(void)
       ADS1256_DATA.ReadOver = 0;
       ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
       ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2532400) / 4194303);
-      float voltage = ADS1256_DATA.volt[0] / 1000.0;
+      float voltage = (float)ADS1256_DATA.volt[0] / 1000.0f;
       Vofa_JustFloat_Send(&huart1, &voltage, 1);
     }
   }

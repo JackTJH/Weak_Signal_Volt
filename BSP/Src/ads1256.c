@@ -68,8 +68,8 @@ void hardRESET(ADS125X_t *ads)
 
 void ADS1256_Write_Bit(uint8_t data,ADS125X_t *ads)
 {
-    // HAL_SPI_Transmit(ads->hspix, &data, 1, HAL_MAX_DELAY);
-    HAL_SPI_Transmit_DMA(ads->hspix, &data, 1);
+    HAL_SPI_Transmit(ads->hspix, &data, 1, HAL_MAX_DELAY);
+    // HAL_SPI_Transmit_DMA(ads->hspix, &data, 1);
 
 }
 
@@ -225,7 +225,7 @@ void ADS1256_Init(void)
         else
         {
             printf("Ok, ASD1256 Chip ID = 0x%X\r\n", id);
-            // BEEP_Short();
+            BEEP_Short();
         }
     }
     ADS1256_StopScan(); // 停止 DRDY 中断
@@ -399,8 +399,8 @@ static int32_t ADS1256_ReadData(void)
 
     CS_0(&ads);	/* SPI片选 = 0 */
     // 发送读数据命令
-    // HAL_SPI_Transmit(ads.hspix, &cmd, 1, HAL_MAX_DELAY);
-    HAL_SPI_Transmit_DMA(ads.hspix, &cmd, 1);
+    HAL_SPI_Transmit(ads.hspix, &cmd, 1, HAL_MAX_DELAY);
+    // HAL_SPI_Transmit_DMA(ads.hspix, &cmd, 1);
 
     // 必须延迟才能读取芯片返回数据
     ADS1256_DelayDATA();
