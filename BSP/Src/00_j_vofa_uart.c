@@ -32,10 +32,10 @@ void Vofa_JustFloat_Send(UART_HandleTypeDef *huart, float *data, uint8_t num_cha
     // 2. 将帧尾追加到发送缓冲区
     memcpy(tx_buffer + data_len, tail, sizeof(tail));
 
-    HAL_UART_Transmit(huart, tx_buffer, total_len, HAL_MAX_DELAY);
+    // HAL_UART_Transmit(huart, tx_buffer, total_len, HAL_MAX_DELAY);
 
-    // HAL_UART_Transmit_IT(huart, tx_buffer, total_len);
-    // while (huart1.gState != HAL_UART_STATE_READY) {}
+    HAL_UART_Transmit_IT(huart, tx_buffer, total_len);
+    while (huart1.gState != HAL_UART_STATE_READY) {}
 }
 
 // // 定义一个足够大的静态缓冲区以容纳最大可能的数据

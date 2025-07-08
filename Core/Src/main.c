@@ -118,10 +118,10 @@ int main(void)
   MX_FSMC_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_UART_Transmit_IT(&huart1,"Weak_Sig_Volt\r\n",sizeof("Weak_Sig_Volt\r\n"));
+
   ADS1256_Init();
   AMP_Setup(&AMP_Parameters);
-  // HAL_UART_Transmit_DMA(&huart1,"Hello\r\n",sizeof("Hello\r\n"));
-  // while (huart1.gState != HAL_UART_STATE_READY) {}
 
   // lcd_init();
   // MultTimer_Init();
