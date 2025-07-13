@@ -53,6 +53,34 @@ AMP_Parameters_TypeDef AMP_Parameters =
 
 extern ADS125X_t ads;
 
+#define SAMPLE_RATE  15000
+
+static uint8_t freq_calculated_flag = 0;
+uint8_t need_recalculate = 0;  // 按键触发重新计算标志
+static volatile uint8_t adc_ready_flag = 0;
+
+
+
+float fft_output[FFT_LEN];
+float fft_mag[FFT_LEN >> 1];
+arm_rfft_fast_instance_f32 fft_instance;
+uint16_t fft_sample_index = 0;
+uint16_t fft_sample_index_control = 0;
+
+void remove_dc(float *data, const uint16_t length)
+{
+  float sum = 0.0f;
+  for(uint16_t i = 0; i < length; i++)
+  {
+    sum += data[i];
+  }
+  const float avg = sum / (float)length;
+  for(uint16_t i = 0; i < length; i++)
+  {
+    data[i] -= avg;
+  }
+}
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -123,8 +151,12 @@ int main(void)
   ADS1256_Init();
   AMP_Setup(&AMP_Parameters);
 
-  // lcd_init();
-  // MultTimer_Init();
+  arm_rfft_fast_init_f32(&fft_instance, FFT_LEN);
+
+
+  lcd_init();
+  MultTimer_Init();
+
   printf("All Initial is OK\r\n");
 
   /* USER CODE END 2 */
@@ -137,6 +169,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    if (adc_ready_flag) {
+      adc_ready_flag = 0;
+      ADS1256_Read_Data_ISR();
+    }
+
     if(ADS1256_DATA.ReadOver)
     {
       ADS1256_DATA.ReadOver = 0;
@@ -144,7 +181,45 @@ int main(void)
       ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2532400) / 4194303);
       float voltage = (float)ADS1256_DATA.volt[0] / 1000.0f;
       Vofa_JustFloat_Send(&huart1, &voltage, 1);
+
+      if (fft_sample_index_control < FFT_LEN) {
+        ADS1256_DATA.volt_buf_control[fft_sample_index_control] = (float)ADS1256_DATA.volt[0] / 1000.0f;
+        fft_sample_index_control++;
+      }
     }
+
+    if (fft_sample_index_control >= FFT_LEN) {
+
+      if (!freq_calculated_flag) {
+        remove_dc(ADS1256_DATA.volt_buf_control, FFT_LEN);
+
+        // Calculator RMS value
+        float sum_sq = 0.0f;
+        for (uint16_t i = 0; i < FFT_LEN; i++) {
+          sum_sq += ADS1256_DATA.volt_buf_control[i] * ADS1256_DATA.volt_buf_control[i];
+        }
+        const float rms = sqrtf(sum_sq / FFT_LEN);
+
+        arm_rfft_fast_f32(&fft_instance, ADS1256_DATA.volt_buf_control, fft_output, 0);
+        arm_cmplx_mag_f32(fft_output, fft_mag, FFT_LEN >> 1);
+        float max_value;
+        uint32_t max_index;
+        arm_max_f32(fft_mag, FFT_LEN >> 1, &max_value, &max_index);
+        float peak_frequency = (float)max_index * ((float)SAMPLE_RATE / FFT_LEN);
+        lcd_printf(0,0,Word_Size_32,BLUE,WHITE,"Fre:%.2fHz RMS:%.3fV", peak_frequency/2.0f, rms);
+        freq_calculated_flag = 1;
+      }
+      // 如果按键触发重新计算，重置所有标志和索引
+      if (need_recalculate) {
+        fft_sample_index_control = 0;  // 重置采样索引
+        freq_calculated_flag = 0;      // 允许重新计算
+        need_recalculate = 0;          // 清除按键标志
+
+        // 可选：清空缓冲区确保数据干净
+        memset(ADS1256_DATA.volt_buf_control, 0, sizeof(ADS1256_DATA.volt_buf_control));
+      }
+    }
+    MultiTimer_TaskHandler();
   }
   /* USER CODE END 3 */
 }
@@ -208,7 +283,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == ADS1256_DRDY_Pin)
   {
-    ADS1256_Read_Data_ISR();
+    adc_ready_flag = 1;
+    // ADS1256_Read_Data_ISR_Fast();
   }
 }
 

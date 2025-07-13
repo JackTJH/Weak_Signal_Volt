@@ -8,6 +8,9 @@
 
 #define CH_NUM 4//差分是4路，单端是8路
 
+#define FFT_LEN		4096
+
+
 
 #define ADS1256_Write_CS_L  HAL_GPIO_WritePin(ADS1256_CS_GPIO_Port,ADS1256_CS_Pin,GPIO_PIN_RESET)
 #define ADS1256_Write_CS_H  HAL_GPIO_WritePin(ADS1256_CS_GPIO_Port,ADS1256_CS_Pin,GPIO_PIN_SET)
@@ -177,6 +180,7 @@ typedef struct
 	int32_t adc[8];
 	int32_t volt[8];
 	double Voltage;			/* 电压值，单位V */
+	float volt_buf_control[FFT_LEN];
 
 }ADS1256_DATA_t;
 
@@ -185,6 +189,8 @@ extern ADS1256_DATA_t ADS1256_DATA;
 
 void ADS1256_Init(void);
 void ADS1256_Read_Data_ISR(void);
+void ADS1256_Read_Data_ISR_Fast(void);
+
 int32_t ADS1256_GetAdc(uint8_t _ch);
 
 #endif
