@@ -1,3 +1,4 @@
 .cache/
 build/
 /cmake-build-debug-stm32/
+.idea/
