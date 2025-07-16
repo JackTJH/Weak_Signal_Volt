@@ -260,9 +260,9 @@ void ADS1256_Init(void)
     ADS1256_StartScan(3);
 
 
-  // waitDRDY(&ads); // 等待数据准备好
-  // writeCMD(CMD_SELFCAL, &ads); // 发送复位命令
-  // waitDRDY(&ads); // 等待数据准备好
+    waitDRDY(&ads); // 等待数据准备好
+    writeCMD(CMD_SELFCAL, &ads); // 发送复位命令
+    waitDRDY(&ads); // 等待数据准备好
 
 
 }

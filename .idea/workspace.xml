@@ -38,6 +38,8 @@
   <component name="ChangeListManager">
     <list default="true" id="cfbd9278-fdb5-4460-9bd7-ce12738c49ca" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/Src/my_timer.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Src/my_timer.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,7 +110,7 @@
     &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;fft&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;noise&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -133,7 +135,12 @@
       <updated>1751979308389</updated>
       <workItem from="1751979310011" duration="599000" />
       <workItem from="1752384745475" duration="10653000" />
-      <workItem from="1752486289696" duration="18000" />
+      <workItem from="1752486289696" duration="7492000" />
+      <workItem from="1752545776014" duration="6011000" />
+      <workItem from="1752561124209" duration="8099000" />
+      <workItem from="1752571157994" duration="1228000" />
+      <workItem from="1752573287190" duration="11140000" />
+      <workItem from="1752650792608" duration="5486000" />
     </task>
     <servers />
   </component>

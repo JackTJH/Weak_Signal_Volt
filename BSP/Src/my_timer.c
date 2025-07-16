@@ -99,6 +99,7 @@ void MultiTimer_Stop(TimerType_e timer_type)
 }
 extern AMP_Parameters_TypeDef AMP_Parameters;
 extern uint8_t need_recalculate;
+extern uint8_t Detect_DC_Or_AC; // 0: DC, 1: AC, 2:Noise
 
 #define FFT_LENGTH 1024 
 uint16_t adc_buff[FFT_LENGTH];
@@ -116,100 +117,104 @@ void MultiTimer_TaskHandler(void)
         {
             case Key_Val_K13:
                 if (last_key_val != Key_Val_K13) {
-                    AMP_Parameters.dg408_in_channel = OUT;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_       OUT");
+                    AMP_Parameters.dg408_in_channel = LNA_OUT;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_       OUT");
                     last_key_val = Key_Val_K13;
                 }
                 break;
             case Key_Val_K14:
                 if (last_key_val != Key_Val_K14) {
-                    AMP_Parameters.dg408_in_channel = LNA_OUT;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_   LNA_OUT");
+                    AMP_Parameters.dg408_in_channel = Ele_Input;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_   LNA_OUT");
                     last_key_val = Key_Val_K14;
                 }
                 break;
             case Key_Val_K15:
                 if (last_key_val != Key_Val_K15) {
-                    AMP_Parameters.dg408_in_channel = VREF;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      VREF");
+                    AMP_Parameters.dg408_in_channel = OUT;
+                    // AMP_Parameters.dg408_in_channel = VREF;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      VREF");
                     last_key_val = Key_Val_K15;
                 }
                 break;
             case Key_Val_K16:
                 if (last_key_val != Key_Val_K16) {
-                    AMP_Parameters.dg408_in_channel = VREF_700mV;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
+                    // AMP_Parameters.dg408_in_channel = VREF_700mV;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
                     last_key_val = Key_Val_K16;
                 }
                 break;
             case Key_Val_K9:
                 if (last_key_val != Key_Val_K9) {
-                    AMP_Parameters.dg408_in_channel = VREF_70mV;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ VREF_70mV");
+                    Detect_DC_Or_AC = 0; // 设置为直流检测模式
+                    // AMP_Parameters.dg408_in_channel = VREF_70mV;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ VREF_70mV");
                     last_key_val = Key_Val_K9;
                 }
                 break;
             case Key_Val_K10:
                 if (last_key_val != Key_Val_K10) {
-                    AMP_Parameters.dg408_in_channel = VREF_9mV;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_  VREF_9mV");
+                    Detect_DC_Or_AC = 1; // 设置为交流检测模式
+                    // AMP_Parameters.dg408_in_channel = VREF_9mV;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_  VREF_9mV");
                     last_key_val = Key_Val_K10;
                 }
                 break;
             case Key_Val_K11:
                 if (last_key_val != Key_Val_K11) {
-                    AMP_Parameters.dg408_in_channel = AGND;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      AGND");
+                    Detect_DC_Or_AC = 2; // 设置为噪声检测模式
+                    // AMP_Parameters.dg408_in_channel = AGND;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      AGND");
                     last_key_val = Key_Val_K11;
                 }
                 break;
             case Key_Val_K12:
                 if (last_key_val != Key_Val_K12) {
-                    AMP_Parameters.dg408_in_channel = Ele_Input;
-                    lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ Ele_Input");
+                    // AMP_Parameters.dg408_in_channel = Ele_Input;
+                    // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_ Ele_Input");
                     last_key_val = Key_Val_K12;
                 }
                 break;
             case Key_Val_K5:
                 if (last_key_val != Key_Val_K5) {
-                    AMP_Parameters.amp_second_magnification = AMP2_Times_X1;
-                    lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X1  ");
+                    // AMP_Parameters.amp_second_magnification = AMP2_Times_X1;
+                    // lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X1  ");
                     last_key_val = Key_Val_K5;
                 }
                 break;
             case Key_Val_K6:
                 if (last_key_val != Key_Val_K6) {
-                    AMP_Parameters.amp_second_magnification = AMP2_Times_X10;
-                    lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X10 ");
+                    // AMP_Parameters.amp_second_magnification = AMP2_Times_X10;
+                    // lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X10 ");
                     last_key_val = Key_Val_K6;
                 }
                 break;
             case Key_Val_K7:
                 if (last_key_val != Key_Val_K7) {
-                    AMP_Parameters.amp_second_magnification = AMP2_Times_X100;
-                    lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X100");
+                    // AMP_Parameters.amp_second_magnification = AMP2_Times_X100;
+                    // lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"AMP_Second_Magnification_X100");
                     last_key_val = Key_Val_K7;
                 }
 
             break;
             case Key_Val_K1:
                 if (last_key_val != Key_Val_K1) {
-                    AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_0Hz;
-                    lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_  0Hz");
+                    // AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_0Hz;
+                    // lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_  0Hz");
                     last_key_val = Key_Val_K1;
                 }
                 break;
             case Key_Val_K2:
                 if (last_key_val != Key_Val_K2) {
-                    AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_35Hz;
-                    lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_ 35Hz");
+                    // AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_35Hz;
+                    // lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_ 35Hz");
                     last_key_val = Key_Val_K2;
                 }
                 break;
             case Key_Val_K3:
                 if (last_key_val != Key_Val_K3) {
-                    AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_100Hz;
-                    lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_100Hz");
+                    // AMP_Parameters.amp_lpf_mode = AMP_LPF_Mode_100Hz;
+                    // lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"AMP_LPF_Mode_100Hz");
                     last_key_val = Key_Val_K3;
                 }
                 break;

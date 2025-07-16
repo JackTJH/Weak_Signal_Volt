@@ -37,6 +37,7 @@
 #include "pannelkey.h"
 #include "arm_math.h"
 #include "00_j_vofa_uart.h"
+#include <stdbool.h>
 
 
 /* USER CODE END Includes */
@@ -48,7 +49,7 @@ AMP_Parameters_TypeDef AMP_Parameters =
 {
     .amp_lpf_mode = AMP_LPF_Mode_0Hz,  
     .amp_second_magnification = AMP2_Times_X1, 
-    .dg408_in_channel = LNA_OUT, 
+    .dg408_in_channel = LNA_OUT,
 };
 
 extern ADS125X_t ads;
@@ -57,6 +58,7 @@ extern ADS125X_t ads;
 
 static uint8_t freq_calculated_flag = 0;
 uint8_t need_recalculate = 0;  // 按键触发重新计算标志
+uint8_t Detect_DC_Or_AC = 0; // 0: DC, 1: AC
 static volatile uint8_t adc_ready_flag = 0;
 
 
@@ -67,7 +69,7 @@ arm_rfft_fast_instance_f32 fft_instance;
 uint16_t fft_sample_index = 0;
 uint16_t fft_sample_index_control = 0;
 
-void remove_dc(float *data, const uint16_t length)
+float remove_dc(float *data, const uint16_t length)
 {
   float sum = 0.0f;
   for(uint16_t i = 0; i < length; i++)
@@ -79,6 +81,7 @@ void remove_dc(float *data, const uint16_t length)
   {
     data[i] -= avg;
   }
+  return avg; // 返回直流分量
 }
 
 /* USER CODE END PTD */
@@ -174,6 +177,8 @@ int main(void)
       ADS1256_Read_Data_ISR();
     }
 
+
+
     if(ADS1256_DATA.ReadOver)
     {
       ADS1256_DATA.ReadOver = 0;
@@ -191,31 +196,131 @@ int main(void)
     if (fft_sample_index_control >= FFT_LEN) {
 
       if (!freq_calculated_flag) {
-        remove_dc(ADS1256_DATA.volt_buf_control, FFT_LEN);
+        // 找到第一个和最后一个最大值，截取完整区间
+        float global_max = ADS1256_DATA.volt_buf_control[0];
 
-        // Calculator RMS value
-        float sum_sq = 0.0f;
-        for (uint16_t i = 0; i < FFT_LEN; i++) {
-          sum_sq += ADS1256_DATA.volt_buf_control[i] * ADS1256_DATA.volt_buf_control[i];
+        // 先找到全局最大值
+        for (int i = 0; i < FFT_LEN; i++) {
+          if (ADS1256_DATA.volt_buf_control[i] > global_max) {
+            global_max = ADS1256_DATA.volt_buf_control[i];
+          }
         }
-        const float rms = sqrtf(sum_sq / FFT_LEN);
 
-        arm_rfft_fast_f32(&fft_instance, ADS1256_DATA.volt_buf_control, fft_output, 0);
+        float threshold = global_max * 0.9f;  // 设置阈值为最大值的90%
+
+        // 找到第一个局部最大值
+        int first_max_idx = 0;
+        for (int i = 1; i < FFT_LEN - 1; i++) {
+          if (ADS1256_DATA.volt_buf_control[i] > ADS1256_DATA.volt_buf_control[i-1] &&
+              ADS1256_DATA.volt_buf_control[i] > ADS1256_DATA.volt_buf_control[i+1] &&
+              ADS1256_DATA.volt_buf_control[i] >= threshold) {
+            first_max_idx = i;
+            break;
+          }
+        }
+
+        // 从后往前找最后一个局部最大值
+        int last_max_idx = FFT_LEN - 1;
+        for (int i = FFT_LEN - 2; i > first_max_idx + 10; i--) {
+          if (ADS1256_DATA.volt_buf_control[i] > ADS1256_DATA.volt_buf_control[i-1] &&
+              ADS1256_DATA.volt_buf_control[i] > ADS1256_DATA.volt_buf_control[i+1] &&
+              ADS1256_DATA.volt_buf_control[i] >= threshold) {
+            last_max_idx = i;
+            break;
+          }
+        }
+
+        // 截取从第一个最大值到最后一个最大值的区间
+        int valid_length = last_max_idx - first_max_idx + 1;
+
+        // 将截取的数据复制到临时数组进行FFT处理
+        float temp_buffer[FFT_LEN];
+        memcpy(temp_buffer, &ADS1256_DATA.volt_buf_control[first_max_idx], valid_length * sizeof(float));
+
+        // 如果截取长度小于FFT_LEN，用零填充
+        if (valid_length < FFT_LEN) {
+          memset(&temp_buffer[valid_length], 0, (FFT_LEN - valid_length) * sizeof(float));
+        }
+
+        float dc_component = remove_dc(temp_buffer, valid_length);
+
+        /************************FFT计算波形频率************************/
+        arm_rfft_fast_f32(&fft_instance, temp_buffer, fft_output, 0);
         arm_cmplx_mag_f32(fft_output, fft_mag, FFT_LEN >> 1);
         float max_value;
         uint32_t max_index;
         arm_max_f32(fft_mag, FFT_LEN >> 1, &max_value, &max_index);
         float peak_frequency = (float)max_index * ((float)SAMPLE_RATE / FFT_LEN);
-        lcd_printf(0,0,Word_Size_32,BLUE,WHITE,"Fre:%.2fHz RMS:%.3fV", peak_frequency/2.0f, rms);
+        lcd_printf(0,32*4,Word_Size_32,BLUE,WHITE,"Fre:%.2fHz", peak_frequency/2.0f);
+        /************************FFT计算波形频率************************/
+
+
+
+        /************************计算有效值和信噪比************************/
+        if (Detect_DC_Or_AC == 0) {
+          if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
+            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fuV", dc_component);
+          }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
+            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", dc_component);
+          }
+        } else if (Detect_DC_Or_AC == 1) {
+          float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
+          float rms_value = peak_amplitude / 1.414213562f;
+          if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
+            lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value,rms_value*1.61);
+          }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
+            lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA", rms_value);
+          }
+        } else {
+          /************************计算噪声的RMS************************/
+          // 使用更严格的噪声计算方法
+          float noise_power = 0.0f;
+          int noise_bins = 0;
+
+          // 只计算远离主信号频率的频率bins作为噪声
+          for (uint16_t i = 1; i < (FFT_LEN >> 1); i++) {
+            // 排除主信号及其周围的频率bins（减少泄漏影响）
+            if (abs((int)i - (int)max_index) > 3) {  // 跳过主信号周围3个bins
+              noise_power += fft_mag[i] * fft_mag[i];
+              noise_bins++;
+            }
+          }
+
+          // 如果噪声bins太少，设置最小值
+          if (noise_bins < 10) {
+            noise_power = 1e-10f;
+          } else {
+            noise_power = noise_power / noise_bins;  // 平均噪声功率
+          }
+
+          // 计算信号RMS值
+          float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
+          float signal_rms = peak_amplitude / 1.414213562f;
+          float noise_rms = sqrtf(noise_power) * 2.0f / FFT_LEN / 1.414213562f;
+
+
+          if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
+            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.2fuV", noise_rms);
+          }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
+            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.2fpA", noise_rms);
+          }
+          /************************计算噪声的RMS************************/
+
+          /************************SNR************************/
+          float snr_linear = signal_rms / noise_rms;
+          float snr_db = 20.0f * log10f(snr_linear);  // 使用20而不是10，因为这是幅度比
+          lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"SNR:%.1fdB", snr_db);
+          /************************SNR************************/
+        }
+        /************************计算有效值和信噪比************************/
+
         freq_calculated_flag = 1;
       }
-      // 如果按键触发重新计算，重置所有标志和索引
-      if (need_recalculate) {
-        fft_sample_index_control = 0;  // 重置采样索引
-        freq_calculated_flag = 0;      // 允许重新计算
-        need_recalculate = 0;          // 清除按键标志
 
-        // 可选：清空缓冲区确保数据干净
+      if (need_recalculate) {
+        fft_sample_index_control = 0;
+        freq_calculated_flag = 0;
+        need_recalculate = 0;
         memset(ADS1256_DATA.volt_buf_control, 0, sizeof(ADS1256_DATA.volt_buf_control));
       }
     }
