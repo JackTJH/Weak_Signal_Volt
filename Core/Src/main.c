@@ -261,15 +261,21 @@ int main(void)
           if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
             lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fuV", dc_component);
           }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", dc_component);
+            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", dc_component*0.35);
           }
         } else if (Detect_DC_Or_AC == 1) {
           float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
           float rms_value = peak_amplitude / 1.414213562f;
           if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-            lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value,rms_value*1.61);
+            if (peak_frequency/2.0f >=45 && peak_frequency/2.0f <= 55)
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value,rms_value*1.88);
+            else if (peak_frequency/2.0f >=95 && peak_frequency/2.0f <= 105)
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value,rms_value*2.48);
           }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-            lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA", rms_value);
+            if (peak_frequency/2.0f >=45 && peak_frequency/2.0f <= 55)
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA,Vp:%.2fpA", rms_value,rms_value*0.6);
+            else if (peak_frequency/2.0f >=95 && peak_frequency/2.0f <= 105)
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA,Vp:%.2fpA", rms_value,rms_value*0.76);
           }
         } else {
           /************************计算噪声的RMS************************/

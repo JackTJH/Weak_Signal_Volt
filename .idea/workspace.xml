@@ -38,7 +38,6 @@
   <component name="ChangeListManager">
     <list default="true" id="cfbd9278-fdb5-4460-9bd7-ce12738c49ca" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BSP/Src/my_timer.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Src/my_timer.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -141,6 +140,7 @@
       <workItem from="1752571157994" duration="1228000" />
       <workItem from="1752573287190" duration="11140000" />
       <workItem from="1752650792608" duration="5486000" />
+      <workItem from="1752715129198" duration="3420000" />
     </task>
     <servers />
   </component>
