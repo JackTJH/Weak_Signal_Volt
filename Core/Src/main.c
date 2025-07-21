@@ -45,6 +45,9 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+#define DC_I_COEFFICIENT  0.344f
+
+
 AMP_Parameters_TypeDef AMP_Parameters = 
 {
     .amp_lpf_mode = AMP_LPF_Mode_0Hz,  
@@ -83,6 +86,12 @@ float remove_dc(float *data, const uint16_t length)
   }
   return avg; // 返回直流分量
 }
+
+static uint8_t calibration_done = 0;  // 校准完成标志
+static float calibration_offset = 0.0f;  // 校准偏置值
+static uint8_t I_calibration_done = 0;  // 校准完成标志
+static float I_calibration_offset = 0.0f;  // 校准偏置值
+static const float target_value = 20.0f;  // 目标校准值20
 
 /* USER CODE END PTD */
 
@@ -183,7 +192,7 @@ int main(void)
     {
       ADS1256_DATA.ReadOver = 0;
       ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
-      ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2532400) / 4194303);
+      ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2546800) / 4194303);
       float voltage = (float)ADS1256_DATA.volt[0] / 1000.0f;
       Vofa_JustFloat_Send(&huart1, &voltage, 1);
 
@@ -259,9 +268,24 @@ int main(void)
         /************************计算有效值和信噪比************************/
         if (Detect_DC_Or_AC == 0) {
           if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fuV", dc_component);
+            // 自校准逻辑 - 只在开机后执行一次
+            if (!calibration_done) {
+              calibration_offset = target_value - dc_component;  // 计算需要的偏置
+              calibration_done = 1;  // 标记校准完成
+            }
+            // 应用校准偏置
+            float calibrated_dc = dc_component + calibration_offset;
+            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fuV", calibrated_dc);
           }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", dc_component*0.35);
+            // 自校准逻辑 - 只在开机后执行一次
+            if (!I_calibration_done) {
+              I_calibration_offset = target_value - (dc_component*DC_I_COEFFICIENT);  // 针对pA通道的校准
+              I_calibration_done = 1;  // 标记校准完成
+            }
+            // 应用校准偏置
+            float calibrated_dc = dc_component*DC_I_COEFFICIENT + I_calibration_offset;
+            lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", calibrated_dc);
+            // lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fpA", dc_component);
           }
         } else if (Detect_DC_Or_AC == 1) {
           float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
@@ -286,7 +310,7 @@ int main(void)
           // 只计算远离主信号频率的频率bins作为噪声
           for (uint16_t i = 1; i < (FFT_LEN >> 1); i++) {
             // 排除主信号及其周围的频率bins（减少泄漏影响）
-            if (abs((int)i - (int)max_index) > 3) {  // 跳过主信号周围3个bins
+            if (abs((int)i - (int)max_index) > 2) {  // 跳过主信号周围2个bins
               noise_power += fft_mag[i] * fft_mag[i];
               noise_bins++;
             }
@@ -306,9 +330,9 @@ int main(void)
 
 
           if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.2fuV", noise_rms);
+            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", noise_rms);
           }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.2fpA", noise_rms);
+            lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fpA", noise_rms);
           }
           /************************计算噪声的RMS************************/
 

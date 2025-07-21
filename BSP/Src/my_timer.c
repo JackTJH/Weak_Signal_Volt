@@ -131,7 +131,7 @@ void MultiTimer_TaskHandler(void)
                 break;
             case Key_Val_K15:
                 if (last_key_val != Key_Val_K15) {
-                    AMP_Parameters.dg408_in_channel = OUT;
+
                     // AMP_Parameters.dg408_in_channel = VREF;
                     // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_      VREF");
                     last_key_val = Key_Val_K15;
@@ -139,6 +139,7 @@ void MultiTimer_TaskHandler(void)
                 break;
             case Key_Val_K16:
                 if (last_key_val != Key_Val_K16) {
+                    NVIC_SystemReset();
                     // AMP_Parameters.dg408_in_channel = VREF_700mV;
                     // lcd_printf(0,32,Word_Size_32,BLUE,WHITE,"AMP_Mode_VREF_700mV");
                     last_key_val = Key_Val_K16;
