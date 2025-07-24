@@ -47,7 +47,7 @@
 
 #define DC_I_COEFFICIENT  0.344f
 
-#define AC_50HZ_C_VP_COEFFICIENT 3.28f
+#define AC_50HZ_C_VP_COEFFICIENT 3.38f
 #define AC_100HZ_C_VP_COEFFICIENT 8.00f
 
 #define AC_50HZ_I_VP_COEFFICIENT 1.12f
@@ -99,6 +99,23 @@ static float calibration_offset = 0.0f;  // 校准偏置值
 static uint8_t I_calibration_done = 0;  // 校准完成标志
 static float I_calibration_offset = 0.0f;  // 校准偏置值
 static const float target_value = 20.0f;  // 目标校准值20
+
+/*******************************交流校准全局变量*******************************/
+static uint8_t ac_50hz_calibration_done = 0;  // 50Hz交流校准完成标志
+static float ac_50hz_calibration_coefficient = 20.00f;  // 50Hz交流校准系数，初始值20.00
+static uint8_t ac_100hz_calibration_done = 0;  // 100Hz交流校准完成标志
+static float ac_100hz_calibration_coefficient = 20.00f;  // 100Hz交流校准系数，初始值20.00
+
+static uint8_t ac_40hz_calibration_done = 0;  // 50Hz交流校准完成标志
+static float ac_40hz_calibration_coefficient = 20.00f;  // 50Hz交流校准系数，初始值20.00
+static uint8_t ac_80hz_calibration_done = 0;  // 100Hz交流校准完成标志
+static float ac_80hz_calibration_coefficient = 20.00f;  // 100Hz交流校准系数，初始值20.00
+
+/*******************************噪声电压全局变量*******************************/
+static uint8_t DC_Volt_Noise_Cal_rms_done = 0;  // 校准完成标志
+static uint8_t AC_Volt_Noise_Cal_rms_done = 0;  // 校准完成标志
+float use_dc_noise_rms = 0.0f;
+float use_ac_noise_rms = 0.0f;
 
 uint8_t detect_mode = 0;
 
@@ -255,16 +272,16 @@ int main(void)
         float temp_buffer[FFT_LEN];
         memcpy(temp_buffer, &ADS1256_DATA.volt_buf_control[first_max_idx], valid_length * sizeof(float));
 
-        // 复制数组用于噪声计算
-        float noise_buffer[FFT_LEN];
-        memcpy(noise_buffer, &ADS1256_DATA.volt_buf_control[first_max_idx], valid_length * sizeof(float));
-
         // 如果截取长度小于FFT_LEN，用零填充
         if (valid_length < FFT_LEN) {
           memset(&temp_buffer[valid_length], 0, (FFT_LEN - valid_length) * sizeof(float));
         }
 
         float dc_component = remove_dc(temp_buffer, valid_length);
+
+        // for (int i = 0; i < FFT_LEN; i++) {
+        //   Vofa_JustFloat_Send(&huart1, &temp_buffer[i], 1);
+        // }
 
         /************************FFT计算波形频率************************/
         arm_rfft_fast_f32(&fft_instance, temp_buffer, fft_output, 0);
@@ -306,10 +323,34 @@ int main(void)
           float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
           float rms_value = peak_amplitude / 1.414213562f;
           if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-            if (peak_frequency/2.0f >=45 && peak_frequency/2.0f <= 55) {
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*AC_50HZ_C_VP_COEFFICIENT);
-            } else if (peak_frequency/2.0f >=95 && peak_frequency/2.0f <= 105) {
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*AC_100HZ_C_VP_COEFFICIENT);
+            if (peak_frequency/2.0f >=35 && peak_frequency/2.0f <= 50) {
+              // 40Hz自校准逻辑 - 只在开机后执行一次
+              if (!ac_40hz_calibration_done) {
+                ac_40hz_calibration_coefficient = 11.00f / rms_value;  // 基于实际测量值计算校准系数
+                ac_40hz_calibration_done = 1;  // 标记校准完成
+              }
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*ac_40hz_calibration_coefficient);
+            }else if (peak_frequency/2.0f >=45 && peak_frequency/2.0f <= 55) {
+              // 50Hz自校准逻辑 - 只在开机后执行一次
+              if (!ac_50hz_calibration_done) {
+                ac_50hz_calibration_coefficient = 11.00f / rms_value;  // 基于实际测量值计算校准系数
+                ac_50hz_calibration_done = 1;  // 标记校准完成
+              }
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*ac_50hz_calibration_coefficient);
+            }else if (peak_frequency/2.0f >=75 && peak_frequency/2.0f <= 90) {
+              // 80Hz自校准逻辑 - 只在开机后执行一次
+              if (!ac_80hz_calibration_done) {
+                ac_80hz_calibration_coefficient = 11.00f / rms_value;  // 基于实际测量值计算校准系数
+                ac_80hz_calibration_done = 1;  // 标记校准完成
+              }
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*ac_80hz_calibration_coefficient);
+            }else if (peak_frequency/2.0f >=95 && peak_frequency/2.0f <= 105) {
+              // 100Hz自校准逻辑 - 只在开机后执行一次
+              if (!ac_100hz_calibration_done) {
+                ac_100hz_calibration_coefficient = 11.00f / rms_value;  // 基于实际测量值计算校准系数
+                ac_100hz_calibration_done = 1;  // 标记校准完成
+              }
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV", rms_value, rms_value*ac_100hz_calibration_coefficient);
             }
           }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
             if (peak_frequency/2.0f >=45 && peak_frequency/2.0f <= 55)
@@ -317,131 +358,61 @@ int main(void)
             else if (peak_frequency/2.0f >=95 && peak_frequency/2.0f <= 105)
               lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA,Vp:%.2fpA", rms_value,rms_value*AC_100HZ_I_VP_COEFFICIENT);
           }
-        } else if (Detect_DC_Or_AC == 2){
-          if (detect_mode == 0) {
-            /************************计算直流噪声的RMS************************/
-            // 对noise_buffer每个点减去dc_component
-            for (int i = 0; i < valid_length; i++) {
-              noise_buffer[i] -= dc_component;
-            }
+        } else {
+          /************************计算噪声的RMS************************/
+          // 使用更严格的噪声计算方法
+          float noise_power = 0.0f;
+          int noise_bins = 0;
 
-            // 如果噪声buffer长度小于FFT_LEN，用零填充
-            if (valid_length < FFT_LEN) {
-              memset(&noise_buffer[valid_length], 0, (FFT_LEN - valid_length) * sizeof(float));
-            }
-
-            // 对去直流后的noise_buffer进行FFT处理
-            float noise_fft_output[FFT_LEN];
-            float noise_fft_mag[FFT_LEN >> 1];
-            arm_rfft_fast_f32(&fft_instance, noise_buffer, noise_fft_output, 0);
-            arm_cmplx_mag_f32(noise_fft_output, noise_fft_mag, FFT_LEN >> 1);
-
-            // 计算噪声功率（所有频率bins的平均功率，因为直流信号主要在DC分量）
-            float noise_power = 0.0f;
-            int noise_bins = 0;
-            for (uint16_t i = 1; i < (FFT_LEN >> 1); i++) {  // 从i=1开始，跳过DC分量
-              noise_power += noise_fft_mag[i] * noise_fft_mag[i];
+          // 只计算远离主信号频率的频率bins作为噪声
+          for (uint16_t i = 1; i < (FFT_LEN >> 1); i++) {
+            // 排除主信号及其周围的频率bins（减少泄漏影响）
+            if (abs((int)i - (int)max_index) > 2) {  // 跳过主信号周围2个bins
+              noise_power += fft_mag[i] * fft_mag[i];
               noise_bins++;
             }
-
-            // 计算噪声RMS
-            float noise_rms;
-            if (noise_bins < 10) {
-              noise_rms = 1e-10f;
-            } else {
-              noise_power = noise_power / noise_bins;  // 平均噪声功率
-              noise_rms = sqrtf(noise_power) * 2.0f / FFT_LEN / 1.414213562f;
-            }
-
-            // 直流信号值（使用校准后的值）
-            float signal_value;
-            if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-              signal_value = dc_component + calibration_offset;
-              lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", noise_rms);
-            } else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-              signal_value = dc_component*DC_I_COEFFICIENT + I_calibration_offset;
-              lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fpA", noise_rms);
-            }
-
-            /************************SNR************************/
-            float snr_linear = fabsf(signal_value) / noise_rms;
-            float snr_db = 20.0f * log10f(snr_linear);
-            lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"SNR:%.1fdB", snr_db);
-            /************************SNR************************/
-          }
-          else if (detect_mode == 1) {
-            if (AMP_Parameters.dg408_in_channel == LNA_OUT ) {
-              /************************计算噪声的RMS************************/
-              // 直接计算noise_buffer的总RMS值
-              float total_rms;
-              arm_rms_f32(noise_buffer, valid_length, &total_rms);
-
-              // 计算信号RMS值（使用原始信号的FFT结果）
-              float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
-              float signal_rms = peak_amplitude / 1.414213562f;
-
-              // 噪声RMS = 总RMS - 信号RMS - 偏置
-              float noise_rms = total_rms - signal_rms - 55.8f;
-
-              if (noise_rms >= 5) {
-                noise_rms -= 3.0f;
-              }
-
-              // 确保噪声RMS不为负值
-              if (noise_rms < 0.0f) {
-                noise_rms = 1e-10f;
-              }
-
-              if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-                lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", noise_rms);
-              }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-                lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fpA", noise_rms);
-              }
-              /************************计算噪声的RMS************************/
-
-              /************************SNR************************/
-              float snr_linear = signal_rms*AC_100HZ_C_VP_COEFFICIENT / noise_rms;
-              float snr_db = 20.0f * log10f(snr_linear);  // 使用20而不是10，因为这是幅度比
-              lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"SNR:%.1fdB", snr_db);
-              /************************SNR************************/
-            }
-            else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-              /************************计算噪声的RMS************************/
-              // 直接计算noise_buffer的总RMS值
-              float total_rms;
-              arm_rms_f32(noise_buffer, valid_length, &total_rms);
-
-              // 计算信号RMS值（使用原始信号的FFT结果）
-              float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
-              float signal_rms = peak_amplitude / 1.414213562f;
-
-              // 噪声RMS = 总RMS - 信号RMS - 偏置
-              float noise_rms = total_rms - signal_rms;
-
-              if (noise_rms >= 5) {
-                noise_rms -= 3.0f;
-              }
-
-              // 确保噪声RMS不为负值
-              if (noise_rms < 0.0f) {
-                noise_rms = 1e-10f;
-              }
-
-              if (AMP_Parameters.dg408_in_channel == LNA_OUT || AMP_Parameters.dg408_in_channel == OUT) {
-                lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", noise_rms);
-              }else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
-                lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fpA", noise_rms);
-              }
-              /************************计算噪声的RMS************************/
-
-              /************************SNR************************/
-              float snr_linear = signal_rms*AC_100HZ_I_VP_COEFFICIENT / noise_rms;
-              float snr_db = 20.0f * log10f(snr_linear);  // 使用20而不是10，因为这是幅度比
-              lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"SNR:%.1fdB", snr_db);
-              /************************SNR************************/
-            }
           }
 
+          // 如果噪声bins太少，设置最小值
+          if (noise_bins < 10) {
+            noise_power = 1e-10f;
+          } else {
+            noise_power = noise_power / noise_bins;  // 平均噪声功率
+          }
+
+          // 计算信号RMS值
+          float peak_amplitude = fft_mag[max_index] * 2.0f / FFT_LEN;
+          float signal_rms = peak_amplitude / 1.414213562f;
+          float noise_rms = sqrtf(noise_power) * 2.0f / FFT_LEN / 1.414213562f;
+
+          /************************计算噪声的RMS************************/
+
+          /************************SNR************************/
+          float snr_linear = 0.0f;
+          if (AMP_Parameters.dg408_in_channel == LNA_OUT) {
+            if (detect_mode == 0) {
+              // float use_dc_noise_rms = 0.0f;
+              if (!DC_Volt_Noise_Cal_rms_done) {
+                use_dc_noise_rms = noise_rms;
+                DC_Volt_Noise_Cal_rms_done = 1;
+              }
+              snr_linear = (dc_component + calibration_offset) / (use_dc_noise_rms*100);
+              lcd_printf(0,32*1,Word_Size_32,BLUE,WHITE,"DC->S_RMS:%.fuV", dc_component + calibration_offset);
+              lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", use_dc_noise_rms*100);
+
+            }else if (detect_mode == 1) {
+              // float use_ac_noise_rms = 0.0f;
+              if (!AC_Volt_Noise_Cal_rms_done) {
+                use_ac_noise_rms = noise_rms;
+                AC_Volt_Noise_Cal_rms_done = 1;
+              }
+              snr_linear = (signal_rms*ac_100hz_calibration_coefficient/1.141f) / (use_ac_noise_rms*10);
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV", signal_rms*ac_100hz_calibration_coefficient/1.141);
+              lcd_printf(0,32*2,Word_Size_32,BLUE,WHITE,"Noise->S_RMS:%.4fuV", use_ac_noise_rms*10);
+            }
+          }
+          lcd_printf(0,32*3,Word_Size_32,BLUE,WHITE,"SNR:%.1f", snr_linear);
+          /************************SNR************************/
         }
         /************************计算有效值和信噪比************************/
 
