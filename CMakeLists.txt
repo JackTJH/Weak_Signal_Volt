@@ -37,7 +37,9 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
         BSP/Src/00_j_vofa_uart.c
-        BSP/Inc/00_j_vofa_uart.h)
+        BSP/Inc/00_j_vofa_uart.h
+        BSP/Src/data_process.c
+        BSP/Inc/data_process.h)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)

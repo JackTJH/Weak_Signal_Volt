@@ -37,7 +37,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cfbd9278-fdb5-4460-9bd7-ce12738c49ca" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/BSP/Inc/data_process.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/BSP/Src/data_process.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -118,6 +121,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\PostGraduateProgram\WeakSignal\02_WeakSignal_VoltCur\SoftWare\Clion\Weak_Signal_Volt\BSP\Inc" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
