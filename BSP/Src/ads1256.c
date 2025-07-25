@@ -5,6 +5,8 @@
 #include <time.h>
 #include "beep.h"
 #include "spi.h"
+#include "00_j_vofa_uart.h"
+#include "usart.h"
 
 ADS1256_DATA_t ADS1256_DATA = {0};
 
@@ -28,7 +30,7 @@ ADS1256_InitParams_t ADS1256_InitParams =
   .ClockOutRateSetting                  = CLKOUT_OFF,                     // 输出时钟关闭       
   .SensorDetectCurrentSources           = DETECT_OFF,                     // 外部电路检测关闭  
   .ProgrammableGainAmplifierSetting     = PGA_1,                          // 可编程外部增益放大器设置为1倍增益
-  .DataRateSetting                      = DRATE_15KHz,                     // 设置数据输出速率为100Hz
+  .DataRateSetting                      = DRATE_7_5KHz,                     // 设置数据输出速率为100Hz
   // .VREF                                 = 2.5360                          // 参考电压设置为2.5360V实际电压表测出来的值（这个参考电压算出来值与实际贴切有差距）
   .VREF                                 = 2.5166                          // 参考电压设置为2.5166V（这个参考电压算出来值与实际贴切）      
 };
@@ -258,9 +260,9 @@ void ADS1256_Init(void)
     ADS1256_StartScan(3);
 
 
-  // waitDRDY(&ads); // 等待数据准备好
-  // writeCMD(CMD_SELFCAL, &ads); // 发送复位命令
-  // waitDRDY(&ads); // 等待数据准备好
+    waitDRDY(&ads); // 等待数据准备好
+    writeCMD(CMD_SELFCAL, &ads); // 发送复位命令
+    waitDRDY(&ads); // 等待数据准备好
 
 
 }
@@ -400,15 +402,12 @@ static int32_t ADS1256_ReadData(void)
     CS_0(&ads);	/* SPI片选 = 0 */
     // 发送读数据命令
     HAL_SPI_Transmit(ads.hspix, &cmd, 1, HAL_MAX_DELAY);
-    // HAL_SPI_Transmit_DMA(ads.hspix, &cmd, 1);
 
     // 必须延迟才能读取芯片返回数据
     ADS1256_DelayDATA();
 
     // 读取3字节ADC数据
     HAL_SPI_Receive(ads.hspix, rx_buf, 3, HAL_MAX_DELAY);
-
-    /*printf("Temp: %02X %02X %02X\r\n", rx_buf[0], rx_buf[1], rx_buf[2]);*/
 
     read = (rx_buf[0] << 16) | (rx_buf[1] << 8) | rx_buf[2];
 
@@ -455,15 +454,6 @@ void ADS1256_Read_Data_ISR(void)
     }
     else if (ADS1256_DATA.ScanMode == 3) //固定读取某个通道-根据原理固定读取AIN0:信号输入，AIN1:GND
     {
-        // ADS1256_SetDiffChannal(ADS1256_DATA.Channel);	/* 切换模拟通道 */
-        // delay_us(5);
-
-        // writeCMD(CMD_SYNC,&ads);
-        // delay_us(5);
-        //
-        // writeCMD(CMD_WAKEUP,&ads);
-        // delay_us(25);
-
         ADS1256_DATA.AdcNow[0] = ADS1256_ReadData();
         ADS1256_DATA.ReadOver = 1;
     }
@@ -495,6 +485,43 @@ void ADS1256_Read_Data_ISR(void)
             ADS1256_DATA.ReadOver = 1;
         }
     }
+}
+
+void ADS1256_Read_Data_ISR_Fast(void)
+{
+    uint32_t read = 0;
+    const uint8_t cmd = CMD_RDATA;
+    uint8_t rx_buf[3] = {0};
+
+    CS_0(&ads);
+
+    // 发送读数据命令（寄存器操作）
+    SPI1->DR = cmd;
+    while (!(SPI1->SR & SPI_SR_TXE));
+    while (SPI1->SR & SPI_SR_BSY);
+
+    // 简单延迟替代 ADS1256_DelayDATA()
+    for(volatile int i = 0; i < 50; i++);
+
+    // 接收3字节数据（寄存器操作）
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        SPI1->DR = 0xFF;
+        while (!(SPI1->SR & SPI_SR_RXNE));
+        rx_buf[i] = SPI1->DR;
+    }
+    while (SPI1->SR & SPI_SR_BSY);
+
+    read = (rx_buf[0] << 16) | (rx_buf[1] << 8) | rx_buf[2];
+    CS_1(&ads);
+
+    if (read & 0x800000)
+    {
+        read += 0xFF000000;
+    }
+
+    ADS1256_DATA.AdcNow[0] = (int32_t)read;
+    ADS1256_DATA.ReadOver = 1;
 }
 
 /*
