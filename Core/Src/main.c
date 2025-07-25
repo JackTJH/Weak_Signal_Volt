@@ -206,7 +206,7 @@ int main(void)
       ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
       ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2546800) / 4194303);
       float voltage = (float)ADS1256_DATA.volt[0] / 1000.0f;
-      // Vofa_JustFloat_Send(&huart1, &voltage, 1);
+      Vofa_JustFloat_Send(&huart1, &voltage, 1);
 
       if (fft_sample_index_control < FFT_LEN) {
         ADS1256_DATA.volt_buf_control[fft_sample_index_control] = (float)ADS1256_DATA.volt[0] / 1000.0f;
