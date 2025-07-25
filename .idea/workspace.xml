@@ -37,10 +37,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cfbd9278-fdb5-4460-9bd7-ce12738c49ca" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/BSP/Inc/data_process.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BSP/Src/data_process.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/Inc/ads1256.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Inc/ads1256.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/Inc/data_process.h" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Inc/data_process.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/Src/data_process.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Src/data_process.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BSP/Src/my_timer.c" beforeDir="false" afterPath="$PROJECT_DIR$/BSP/Src/my_timer.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Core/Src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Src/main.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -127,11 +128,6 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Weak_Signal" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Weak_Signal" TARGET_NAME="Weak_Signal" CONFIG_NAME="Debug-STM32" RUN_TARGET_PROJECT_NAME="Weak_Signal" RUN_TARGET_NAME="Weak_Signal">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -159,6 +155,8 @@
       <workItem from="1753060571290" duration="4615000" />
       <workItem from="1753253815402" duration="12439000" />
       <workItem from="1753327732804" duration="1523000" />
+      <workItem from="1753420572054" duration="13569000" />
+      <workItem from="1753452687150" duration="5432000" />
     </task>
     <servers />
   </component>

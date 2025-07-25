@@ -4,11 +4,11 @@
 #include "main.h"
 
 #include "spi.h"
+#include "data_process.h"
 
 
 #define CH_NUM 4//差分是4路，单端是8路
 
-#define FFT_LEN		4096
 
 
 
