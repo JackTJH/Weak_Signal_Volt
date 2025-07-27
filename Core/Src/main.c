@@ -77,13 +77,6 @@ DisplayMode_e current_display_mode = MODE_PC;
 //rms计算变量
 static RMS_Average_TypeDef rms_calculator;
 
-/*******************************直流校准全局变量*******************************/
-static uint8_t calibration_done = 0;  // 校准完成标志
-static float calibration_offset = 0.0f;  // 校准偏置值
-static uint8_t I_calibration_done = 0;  // 校准完成标志
-static float I_calibration_offset = 0.0f;  // 校准偏置值
-static const float target_value = 20.0f;  // 目标校准值20
-
 //直流电压自交准系数
 static DC_Calibration_TypeDef voltage_dc_cal;
 static DC_Calibration_TypeDef current_dc_cal;
@@ -294,17 +287,16 @@ int main(void)
           /************************平均交流有效值计算************************/
 
           if (AMP_Parameters.dg408_in_channel == LNA_OUT) {
-            float signal_rms = 0.0f;  // 在此处定义 signal_rms
+            float signal_rms = 0.0f;
             /***************************处理40Hz频率校准***************************/
             float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_V, &rms_calculator,
                                                                  peak_frequency/2.0f, 40.0f,
                                                                  rms_value, 1);
             if (calibrated_40hz > 0.0f) {
-              signal_rms = calibrated_40hz / 1.141f;  // 计算真实信号RMS
+              signal_rms = calibrated_40hz / 1.141f;
               lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
                         rms_value, calibrated_40hz);
             }
-            /***************************处理40Hz频率校准***************************/
 
             /***************************处理80Hz频率校准***************************/
             float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_V, &rms_calculator,
@@ -312,7 +304,7 @@ int main(void)
                                                                  rms_value, 2);
 
             if (calibrated_80hz > 0.0f) {
-              signal_rms = calibrated_80hz / 1.141f;  // 计算真实信号RMS
+              signal_rms = calibrated_80hz / 1.141f;
               lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
                         rms_value, calibrated_80hz);
             }

@@ -7,10 +7,11 @@
 
 #include "main.h"
 #include "arm_math.h"
+#include <stdbool.h>
 
 #define FFT_LEN		4096
 #define SAMPLE_RATE  15000
-#define RMS_AVERAGE_NUM   5
+#define RMS_AVERAGE_NUM   10
 #define RMS_SELF_CAL      11.0f
 #define DC_I_COEFFICIENT  0.344f
 
@@ -111,5 +112,6 @@ float Calculate_DC_Noise(Noise_Calculator_TypeDef *noise_calc,
                          float *signal,
                          uint32_t length,
                          float dc_value);
+
 
 #endif //DATA_PROCESS_H

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 
+
 float remove_dc(float *data, const uint16_t length)
 {
     float sum = 0.0f;
@@ -548,4 +549,15 @@ float Calculate_DC_Noise(Noise_Calculator_TypeDef *noise_calc,
     noise_calc->is_ready = 0;
     return noise_rms;
 }
+
+extern Frequency_Calibration_TypeDef freq_40hz_cal_V_11_20;   // 11-20uV范围
+extern Frequency_Calibration_TypeDef freq_40hz_cal_V_31_40;   // 31-40uV范围
+extern Frequency_Calibration_TypeDef freq_40hz_cal_V_51_60;   // 51-60uV范围
+extern Frequency_Calibration_TypeDef freq_40hz_cal_V_71_80;   // 71-80uV范围
+
+extern Frequency_Calibration_TypeDef freq_80hz_cal_V_11_20;   // 11-20uV范围
+extern Frequency_Calibration_TypeDef freq_80hz_cal_V_31_40;   // 31-40uV范围
+extern Frequency_Calibration_TypeDef freq_80hz_cal_V_51_60;   // 51-60uV范围
+extern Frequency_Calibration_TypeDef freq_80hz_cal_V_71_80;   // 71-80uV范围
+
 
