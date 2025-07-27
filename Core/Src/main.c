@@ -72,6 +72,8 @@ static FFT_Processor_TypeDef fft_processor;
 //选择检测模式变量
 Detect_Mode_TypeDef Detect_DC_Or_AC = DETECT_DC; // 初始化为直流模式
 
+DisplayMode_e current_display_mode = MODE_PC;
+
 //rms计算变量
 static RMS_Average_TypeDef rms_calculator;
 
@@ -179,6 +181,13 @@ int main(void)
 
 
   lcd_init();
+
+  if(current_display_mode == MODE_ARM)
+    lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->ARM");
+  else if(current_display_mode == MODE_PC)
+    lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->PC ");
+
+
   MultTimer_Init();
 
   printf("All Initial is OK\r\n");
@@ -206,7 +215,8 @@ int main(void)
       ADS1256_DATA.adc[0] = ADS1256_GetAdc(0);
       ADS1256_DATA.volt[0] = (int32_t)(((int64_t)ADS1256_DATA.adc[0] * 2546800) / 4194303);
       float voltage = (float)ADS1256_DATA.volt[0] / 1000.0f;
-      Vofa_JustFloat_Send(&huart1, &voltage, 1);
+      if (current_display_mode == MODE_PC)
+        Vofa_JustFloat_Send(&huart1, &voltage, 1);
 
       if (fft_sample_index_control < FFT_LEN) {
         ADS1256_DATA.volt_buf_control[fft_sample_index_control] = (float)ADS1256_DATA.volt[0] / 1000.0f;
@@ -228,9 +238,12 @@ int main(void)
         /*****************************截取一段完整的周期*****************************/
 
         /*****************************调试时使用打印出处理的波形数据*****************************/
-        // for (int i = 0; i < FFT_LEN; i++) {
-        //   Vofa_JustFloat_Send(&huart1, &temp_buffer_fft[i], 1);
-        // }
+        if (current_display_mode == MODE_ARM) {
+          for (int i = 0; i < FFT_LEN; i++) {
+            Vofa_JustFloat_Send(&huart1, &temp_buffer_fft[i], 1);
+          }
+        }
+
         /*****************************调试时使用打印出处理的波形数据*****************************/
 
         /************************FFT计算波形频率************************/
@@ -244,32 +257,32 @@ int main(void)
         if (Detect_DC_Or_AC == DETECT_DC) {
           if (AMP_Parameters.dg408_in_channel == LNA_OUT) {
               float calibrated_dc = Process_DC_Calibration(&voltage_dc_cal, dc_component);
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "DC->S_RMS:%.fuV", calibrated_dc);
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "DC->S_RMS:%.3fuV", calibrated_dc);
               /***************************噪声计算***************************/
               // 对于直流信号，噪声主要来自电路的本底噪声和干扰
               // 由于没有特定频率需要去除，直接计算原始信号的波动作为噪声
               Calculate_DC_Noise(&noise_calculator, temp_buffer_noise, FFT_LEN, dc_component);
-              lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "DC->Noise_RMS:%.2fuV", noise_calculator.averaged_noise);
+              lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "DC->Noise_RMS:%.3fuV", noise_calculator.averaged_noise);
               /***************************噪声计算***************************/
               /***************************计算信号和噪声的比值***************************/
               float snr_ratio = calibrated_dc / noise_calculator.averaged_noise;
-              lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "DC->SNR:%.2fuV", snr_ratio);
+              lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "DC->SNR:%.3f", snr_ratio);
               /***************************计算信号和噪声的比值***************************/
 
 
           }
           else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
               float calibrated_dc = Process_DC_Calibration(&current_dc_cal, dc_component);
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "DC->S_RMS:%.fpA", calibrated_dc);
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "DC->S_RMS:%.3fpA", calibrated_dc);
               /***************************噪声计算***************************/
               // 对于直流信号，噪声主要来自电路的本底噪声和干扰
               // 由于没有特定频率需要去除，直接计算原始信号的波动作为噪声
               Calculate_DC_Noise(&noise_calculator, temp_buffer_noise, FFT_LEN, dc_component);
-              lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "DC->Noise_RMS:%.2fpA", noise_calculator.averaged_noise);
+              lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "DC->Noise_RMS:%.3fpA", noise_calculator.averaged_noise);
               /***************************噪声计算***************************/
               /***************************计算信号和噪声的比值***************************/
               float snr_ratio = calibrated_dc / noise_calculator.averaged_noise;
-              lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "DC->SNR:%.2fpA", snr_ratio);
+              lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "DC->SNR:%.3f", snr_ratio);
               /***************************计算信号和噪声的比值***************************/
           }
         }
@@ -281,12 +294,14 @@ int main(void)
           /************************平均交流有效值计算************************/
 
           if (AMP_Parameters.dg408_in_channel == LNA_OUT) {
+            float signal_rms = 0.0f;  // 在此处定义 signal_rms
             /***************************处理40Hz频率校准***************************/
             float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_V, &rms_calculator,
                                                                  peak_frequency/2.0f, 40.0f,
                                                                  rms_value, 1);
             if (calibrated_40hz > 0.0f) {
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV",
+              signal_rms = calibrated_40hz / 1.141f;  // 计算真实信号RMS
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
                         rms_value, calibrated_40hz);
             }
             /***************************处理40Hz频率校准***************************/
@@ -295,10 +310,10 @@ int main(void)
             float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_V, &rms_calculator,
                                                                  peak_frequency/2.0f, 80.0f,
                                                                  rms_value, 2);
-            float signal_rms = 0.0f;  // 在此处定义 signal_rms
+
             if (calibrated_80hz > 0.0f) {
               signal_rms = calibrated_80hz / 1.141f;  // 计算真实信号RMS
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fuV,Vp:%.2fuV",
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
                         rms_value, calibrated_80hz);
             }
             /***************************处理80Hz频率校准***************************/
@@ -308,8 +323,8 @@ int main(void)
                                                                     temp_buffer_noise,
                                                                     peak_frequency/2.0f,
                                                                     FFT_LEN);
-            lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "AC->Noise_RMS:%.2fuV", noise_calculator.averaged_noise);
-            lcd_printf(0, 32 * 0, Word_Size_32, BLUE, WHITE, "AC->Real_Sig_RMS:%.2fuV", signal_rms);
+            lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "AC->Noise_RMS:%.3fuV", noise_calculator.averaged_noise);
+            lcd_printf(0, 32 * 0, Word_Size_32, BLUE, WHITE, "AC->Real_Sig_RMS:%.3fuV", signal_rms);
             /***************************噪声计算***************************/
 
             /***************************计算信号和噪声的比值***************************/
@@ -327,7 +342,7 @@ int main(void)
             } else {
                 snr_ratio = 0.0f;  // 避免除零错误
             }
-            lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "AC->SNR:%.2f", snr_ratio);
+            lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "AC->SNR:%.3f", snr_ratio);
             /***************************计算信号和噪声的比值***************************/
 
 
@@ -336,12 +351,15 @@ int main(void)
           }
           else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
 
+            float signal_rms = 0.0f;  // 在此处定义 signal_rms
+
             /***************************处理40Hz频率校准***************************/
             float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_I, &rms_calculator,
                                                                  peak_frequency/2.0f, 40.0f,
                                                                  rms_value, 1);
             if (calibrated_40hz > 0.0f) {
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA,Vp:%.2fpA",
+              signal_rms = calibrated_40hz / 1.141f;  // 计算真实信号RMS
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
                         rms_value, calibrated_40hz);
             }
             /***************************处理40Hz频率校准***************************/
@@ -350,10 +368,10 @@ int main(void)
             float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_I, &rms_calculator,
                                                                  peak_frequency/2.0f, 80.0f,
                                                                  rms_value, 2);
-            float signal_rms = 0.0f;  // 在此处定义 signal_rms
+
             if (calibrated_80hz > 0.0f) {
               signal_rms = calibrated_80hz / 1.141f;  // 计算真实信号RMS
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.2fpA,Vp:%.2fpA",
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
                         rms_value, calibrated_80hz);
             }
             /***************************处理80Hz频率校准***************************/
@@ -364,8 +382,8 @@ int main(void)
                                                                     peak_frequency/2.0f,
                                                                     FFT_LEN);
 
-            lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "AC->Noise_RMS:%.2fpA", noise_calculator.averaged_noise);
-            lcd_printf(0, 32 * 0, Word_Size_32, BLUE, WHITE, "AC->Real_Sig_RMS:%.2fpA", signal_rms);
+            lcd_printf(0, 32 * 2, Word_Size_32, BLUE, WHITE, "AC->Noise_RMS:%.3fpA", noise_calculator.averaged_noise);
+            lcd_printf(0, 32 * 0, Word_Size_32, BLUE, WHITE, "AC->Real_Sig_RMS:%.3fpA", signal_rms);
             /***************************噪声计算***************************/
 
 
@@ -384,7 +402,7 @@ int main(void)
             } else {
                 snr_ratio = 0.0f;  // 避免除零错误
             }
-            lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "AC->SNR:%.2f", snr_ratio);
+            lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "AC->SNR:%.3f", snr_ratio);
             /***************************计算信号和噪声的比值***************************/
 
 

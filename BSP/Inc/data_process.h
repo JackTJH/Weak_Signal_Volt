@@ -29,6 +29,16 @@ typedef enum {
     DETECT_AC = 1      // 交流检测模式
 } Detect_Mode_TypeDef;
 
+typedef enum {
+    MODE_NONE = 0,
+    MODE_PC,
+    MODE_ARM
+} DisplayMode_e;
+
+
+
+
+
 // 频率校准结构体定义
 typedef struct {
     uint8_t calibration_done;           // 校准完成标志

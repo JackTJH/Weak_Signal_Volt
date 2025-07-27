@@ -10,7 +10,9 @@
 #include "math.h"
 #include "data_process.h"
 
-static MultTimer_t timer_system; 
+static MultTimer_t timer_system;
+
+
 
 void MultTimer_Init(void)
 {
@@ -101,6 +103,8 @@ void MultiTimer_Stop(TimerType_e timer_type)
 extern AMP_Parameters_TypeDef AMP_Parameters;
 extern uint8_t need_recalculate;
 extern Detect_Mode_TypeDef Detect_DC_Or_AC; // 初始化为直流模式
+extern DisplayMode_e current_display_mode;
+
 
 #define FFT_LENGTH 1024 
 uint16_t adc_buff[FFT_LENGTH];
@@ -131,6 +135,7 @@ void MultiTimer_TaskHandler(void)
             case Key_Val_K15:
                 if (last_key_val != Key_Val_K15) {
                     last_key_val = Key_Val_K15;
+
                 }
                 break;
             case Key_Val_K16:
@@ -152,12 +157,15 @@ void MultiTimer_TaskHandler(void)
                 break;
             case Key_Val_K11:
                 if (last_key_val != Key_Val_K11) {
-                    // Detect_DC_Or_AC = 2; // 设置为噪声检测模式
+                    current_display_mode = MODE_PC;
+                    lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->PC ");
                     last_key_val = Key_Val_K11;
                 }
                 break;
             case Key_Val_K12:
                 if (last_key_val != Key_Val_K12) {
+                    current_display_mode = MODE_ARM;
+                    lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->ARM");
                     last_key_val = Key_Val_K12;
                 }
                 break;
@@ -217,8 +225,10 @@ void MultiTimer_TaskHandler(void)
     if(MultiTimer_IsExpired(TIMER_200MS))
     {
         MultiTimer_ClearFlag(TIMER_200MS);
-        need_recalculate = 1;
-
+        if(current_display_mode == MODE_ARM)
+            need_recalculate = 1;
+        // else
+        //     need_recalculate = 0;
     }
 
     // 1s任务处理
