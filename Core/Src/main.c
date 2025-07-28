@@ -60,7 +60,7 @@ extern ADS125X_t ads;
 
 
 static uint8_t freq_calculated_flag = 0;
-uint8_t need_recalculate = 0;  // 按键触发重新计算标志
+uint8_t need_recalculate = 1;  // 初始化计算一次
 static volatile uint8_t adc_ready_flag = 0;
 
 uint16_t fft_sample_index = 0;
