@@ -36,7 +36,13 @@ typedef enum {
     MODE_ARM
 } DisplayMode_e;
 
-
+typedef enum {
+    CALIB_COEFF_11 = 0,
+    CALIB_COEFF_31,
+    CALIB_COEFF_51,
+    CALIB_COEFF_71,
+    CALIB_COEFF_MAX
+} Calibration_Coefficient_e;
 
 
 
@@ -112,6 +118,7 @@ float Calculate_DC_Noise(Noise_Calculator_TypeDef *noise_calc,
                          float *signal,
                          uint32_t length,
                          float dc_value);
+
 
 
 #endif //DATA_PROCESS_H

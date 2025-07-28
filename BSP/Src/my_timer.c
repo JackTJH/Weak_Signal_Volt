@@ -105,6 +105,12 @@ extern uint8_t need_recalculate;
 extern Detect_Mode_TypeDef Detect_DC_Or_AC; // 初始化为直流模式
 extern DisplayMode_e current_display_mode;
 
+extern Frequency_Calibration_TypeDef freq_40hz_cal_V;
+extern Frequency_Calibration_TypeDef freq_80hz_cal_V;
+
+extern Frequency_Calibration_TypeDef freq_40hz_cal_I;
+extern Frequency_Calibration_TypeDef freq_80hz_cal_I;
+
 
 #define FFT_LENGTH 1024 
 uint16_t adc_buff[FFT_LENGTH];
@@ -120,15 +126,18 @@ void MultiTimer_TaskHandler(void)
         MultiTimer_ClearFlag(TIMER_1MS);
         switch (Global_Key_Val)
         {
+            /******************************第一排矩阵按键******************************/
             case Key_Val_K13:
                 if (last_key_val != Key_Val_K13) {
                     AMP_Parameters.dg408_in_channel = LNA_OUT;
+                    lcd_printf(0, 32 * 6, Word_Size_32, BLUE, WHITE, "DETECT->Voltage");
                     last_key_val = Key_Val_K13;
                 }
                 break;
             case Key_Val_K14:
                 if (last_key_val != Key_Val_K14) {
                     AMP_Parameters.dg408_in_channel = Ele_Input;
+                    lcd_printf(0, 32 * 6, Word_Size_32, BLUE, WHITE, "DETECT->Current");
                     last_key_val = Key_Val_K14;
                 }
                 break;
@@ -143,6 +152,9 @@ void MultiTimer_TaskHandler(void)
                     NVIC_SystemReset();
                 }
                 break;
+            /******************************第一排矩阵按键******************************/
+
+            /******************************第二排矩阵按键******************************/
             case Key_Val_K9:
                 if (last_key_val != Key_Val_K9) {
                     Detect_DC_Or_AC = DETECT_DC; // 设置为直流检测模式
@@ -169,43 +181,94 @@ void MultiTimer_TaskHandler(void)
                     last_key_val = Key_Val_K12;
                 }
                 break;
+            /******************************第二排矩阵按键******************************/
+
+            /******************************第三排矩阵按键******************************/
             case Key_Val_K5:
                 if (last_key_val != Key_Val_K5) {
+                    freq_40hz_cal_V.target_calibration_value = 11.0f;
+                    freq_40hz_cal_V.calibration_done = 0;
+                    freq_80hz_cal_V.target_calibration_value = 11.0f;
+                    freq_80hz_cal_V.calibration_done = 0;
                     last_key_val = Key_Val_K5;
+                    lcd_printf(0, 32 * 7, Word_Size_32, BLUE, WHITE, "Calibration->11uV");
                 }
                 break;
             case Key_Val_K6:
                 if (last_key_val != Key_Val_K6) {
+                    freq_40hz_cal_V.target_calibration_value = 31.0f;
+                    freq_40hz_cal_V.calibration_done = 0;
+                    freq_80hz_cal_V.target_calibration_value = 31.0f;
+                    freq_80hz_cal_V.calibration_done = 0;
                     last_key_val = Key_Val_K6;
+                    lcd_printf(0, 32 * 7, Word_Size_32, BLUE, WHITE, "Calibration->31uV");
                 }
                 break;
             case Key_Val_K7:
                 if (last_key_val != Key_Val_K7) {
+                    freq_40hz_cal_V.target_calibration_value = 51.0f;
+                    freq_40hz_cal_V.calibration_done = 0;
+                    freq_80hz_cal_V.target_calibration_value = 51.0f;
+                    freq_80hz_cal_V.calibration_done = 0;
                     last_key_val = Key_Val_K7;
+                    lcd_printf(0, 32 * 7, Word_Size_32, BLUE, WHITE, "Calibration->51uV");
                 }
+                break;
+            case Key_Val_K8:
+                if (last_key_val != Key_Val_K8) {
+                    freq_40hz_cal_V.target_calibration_value = 71.0f;
+                    freq_40hz_cal_V.calibration_done = 0;
+                    freq_80hz_cal_V.target_calibration_value = 71.0f;
+                    freq_80hz_cal_V.calibration_done = 0;
+                    last_key_val = Key_Val_K8;
+                    lcd_printf(0, 32 * 7, Word_Size_32, BLUE, WHITE, "Calibration->71uV");
+                }
+                break;
+            /******************************第三排矩阵按键******************************/
 
-            break;
+            /******************************第四排矩阵按键******************************/
             case Key_Val_K1:
-                if (last_key_val != Key_Val_K1) {
-                    last_key_val = Key_Val_K1;
-                }
-                break;
-            case Key_Val_K2:
-                if (last_key_val != Key_Val_K2) {
-                    last_key_val = Key_Val_K2;
-                }
-                break;
-            case Key_Val_K3:
-                if (last_key_val != Key_Val_K3) {
-                    last_key_val = Key_Val_K3;
-                }
-                break;
-            case Key_Val_K4:
-                if (last_key_val != Key_Val_K4) {
-                    need_recalculate = 1;
-                    last_key_val = Key_Val_K4;
-                }
-                break;
+                    if (last_key_val != Key_Val_K1) {
+                        freq_40hz_cal_I.target_calibration_value = 11.0f;
+                        freq_40hz_cal_I.calibration_done = 0;
+                        freq_80hz_cal_I.target_calibration_value = 11.0f;
+                        freq_80hz_cal_I.calibration_done = 0;
+                        last_key_val = Key_Val_K1;
+                        lcd_printf(0, 32 * 8, Word_Size_32, BLUE, WHITE, "Current Cal->11uA");
+                    }
+                    break;
+                case Key_Val_K2:
+                    if (last_key_val != Key_Val_K2) {
+                        freq_40hz_cal_I.target_calibration_value = 31.0f;
+                        freq_40hz_cal_I.calibration_done = 0;
+                        freq_80hz_cal_I.target_calibration_value = 31.0f;
+                        freq_80hz_cal_I.calibration_done = 0;
+                        last_key_val = Key_Val_K2;
+                        lcd_printf(0, 32 * 8, Word_Size_32, BLUE, WHITE, "Current Cal->31uA");
+                    }
+                    break;
+                case Key_Val_K3:
+                    if (last_key_val != Key_Val_K3) {
+                        freq_40hz_cal_I.target_calibration_value = 51.0f;
+                        freq_40hz_cal_I.calibration_done = 0;
+                        freq_80hz_cal_I.target_calibration_value = 51.0f;
+                        freq_80hz_cal_I.calibration_done = 0;
+                        last_key_val = Key_Val_K3;
+                        lcd_printf(0, 32 * 8, Word_Size_32, BLUE, WHITE, "Current Cal->51uA");
+                    }
+                    break;
+                case Key_Val_K4:
+                    if (last_key_val != Key_Val_K4) {
+                        freq_40hz_cal_I.target_calibration_value = 71.0f;
+                        freq_40hz_cal_I.calibration_done = 0;
+                        freq_80hz_cal_I.target_calibration_value = 71.0f;
+                        freq_80hz_cal_I.calibration_done = 0;
+                        // need_recalculate = 1;
+                        lcd_printf(0, 32 * 8, Word_Size_32, BLUE, WHITE, "Current Cal->71uA");
+                        last_key_val = Key_Val_K4;
+                    }
+                    break;
+            /******************************第四排矩阵按键******************************/
 
             default: break;
         }

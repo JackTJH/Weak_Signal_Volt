@@ -72,7 +72,7 @@ static FFT_Processor_TypeDef fft_processor;
 //选择检测模式变量
 Detect_Mode_TypeDef Detect_DC_Or_AC = DETECT_DC; // 初始化为直流模式
 
-DisplayMode_e current_display_mode = MODE_PC;
+DisplayMode_e current_display_mode = MODE_ARM;
 
 //rms计算变量
 static RMS_Average_TypeDef rms_calculator;
@@ -82,12 +82,12 @@ static DC_Calibration_TypeDef voltage_dc_cal;
 static DC_Calibration_TypeDef current_dc_cal;
 
 //交流电压自交准系数
-static Frequency_Calibration_TypeDef freq_40hz_cal_V;
-static Frequency_Calibration_TypeDef freq_80hz_cal_V;
+Frequency_Calibration_TypeDef freq_40hz_cal_V;
+Frequency_Calibration_TypeDef freq_80hz_cal_V;
 
 //交流电流自交准系数
-static Frequency_Calibration_TypeDef freq_40hz_cal_I;
-static Frequency_Calibration_TypeDef freq_80hz_cal_I;
+Frequency_Calibration_TypeDef freq_40hz_cal_I;
+Frequency_Calibration_TypeDef freq_80hz_cal_I;
 
 // 噪声计算变量
 static Noise_Calculator_TypeDef noise_calculator;
@@ -179,6 +179,11 @@ int main(void)
     lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->ARM");
   else if(current_display_mode == MODE_PC)
     lcd_printf(0, 32 * 5, Word_Size_32, BLUE, WHITE, "MODE->PC ");
+
+  if(AMP_Parameters.dg408_in_channel == LNA_OUT)
+    lcd_printf(0, 32 * 6, Word_Size_32, BLUE, WHITE, "DETECT->Voltage");
+  else if(AMP_Parameters.dg408_in_channel == Ele_Input)
+    lcd_printf(0, 32 * 6, Word_Size_32, BLUE, WHITE, "DETECT->Current");
 
 
   MultTimer_Init();
@@ -288,27 +293,34 @@ int main(void)
 
           if (AMP_Parameters.dg408_in_channel == LNA_OUT) {
             float signal_rms = 0.0f;
-            /***************************处理40Hz频率校准***************************/
-            float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_V, &rms_calculator,
-                                                                 peak_frequency/2.0f, 40.0f,
-                                                                 rms_value, 1);
-            if (calibrated_40hz > 0.0f) {
-              signal_rms = calibrated_40hz / 1.141f;
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
-                        rms_value, calibrated_40hz);
-            }
 
-            /***************************处理80Hz频率校准***************************/
-            float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_V, &rms_calculator,
-                                                                 peak_frequency/2.0f, 80.0f,
-                                                                 rms_value, 2);
+            // 只有在RMS平均计算完成后才进行频率校准和显示
+            if (rms_calculator.is_ready) {
+                /***************************处理40Hz频率校准***************************/
+                float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_V, &rms_calculator,
+                                                                     peak_frequency/2.0f, 40.0f,
+                                                                     rms_value, 1);
+                if (calibrated_40hz > 0.0f) {
+                  signal_rms = calibrated_40hz / 1.141f;
+                  lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
+                            rms_value, calibrated_40hz);
+                }
 
-            if (calibrated_80hz > 0.0f) {
-              signal_rms = calibrated_80hz / 1.141f;
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
-                        rms_value, calibrated_80hz);
+                /***************************处理80Hz频率校准***************************/
+                float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_V, &rms_calculator,
+                                                                     peak_frequency/2.0f, 80.0f,
+                                                                     rms_value, 2);
+
+                if (calibrated_80hz > 0.0f) {
+                  signal_rms = calibrated_80hz / 1.141f;
+                  lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fuV,Vp:%.3fuV",
+                            rms_value, calibrated_80hz);
+                }
+                /***************************处理80Hz频率校准***************************/
+            } else {
+                // RMS平均计算尚未完成，显示等待信息
+                lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->Calculating...");
             }
-            /***************************处理80Hz频率校准***************************/
 
             /***************************噪声计算***************************/
             Calculate_Noise_After_Signal_Removal(&noise_calculator,
@@ -336,37 +348,41 @@ int main(void)
             }
             lcd_printf(0, 32 * 3, Word_Size_32, BLUE, WHITE, "AC->SNR:%.3f", snr_ratio);
             /***************************计算信号和噪声的比值***************************/
-
-
-
-
           }
           else if (AMP_Parameters.dg408_in_channel == Ele_Input) {
 
             float signal_rms = 0.0f;  // 在此处定义 signal_rms
 
-            /***************************处理40Hz频率校准***************************/
-            float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_I, &rms_calculator,
-                                                                 peak_frequency/2.0f, 40.0f,
-                                                                 rms_value, 1);
-            if (calibrated_40hz > 0.0f) {
-              signal_rms = calibrated_40hz / 1.141f;  // 计算真实信号RMS
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
-                        rms_value, calibrated_40hz);
-            }
-            /***************************处理40Hz频率校准***************************/
 
-            /***************************处理80Hz频率校准***************************/
-            float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_I, &rms_calculator,
-                                                                 peak_frequency/2.0f, 80.0f,
-                                                                 rms_value, 2);
+            // 只有在RMS平均计算完成后才进行频率校准和显示
+            if (rms_calculator.is_ready) {
+              /***************************处理40Hz频率校准***************************/
+              float calibrated_40hz = Process_Frequency_Calibration(&freq_40hz_cal_I, &rms_calculator,
+                                                                   peak_frequency/2.0f, 40.0f,
+                                                                   rms_value, 1);
+              if (calibrated_40hz > 0.0f) {
+                signal_rms = calibrated_40hz / 1.141f;  // 计算真实信号RMS
+                lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
+                          rms_value, calibrated_40hz);
+              }
+              /***************************处理40Hz频率校准***************************/
 
-            if (calibrated_80hz > 0.0f) {
-              signal_rms = calibrated_80hz / 1.141f;  // 计算真实信号RMS
-              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
-                        rms_value, calibrated_80hz);
+              /***************************处理80Hz频率校准***************************/
+              float calibrated_80hz = Process_Frequency_Calibration(&freq_80hz_cal_I, &rms_calculator,
+                                                                   peak_frequency/2.0f, 80.0f,
+                                                                   rms_value, 2);
+
+              if (calibrated_80hz > 0.0f) {
+                signal_rms = calibrated_80hz / 1.141f;  // 计算真实信号RMS
+                lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->S_RMS:%.3fpA,Vp:%.3fpA",
+                          rms_value, calibrated_80hz);
+              }
+              /***************************处理80Hz频率校准***************************/
             }
-            /***************************处理80Hz频率校准***************************/
+            else {
+              // RMS平均计算尚未完成，显示等待信息
+              lcd_printf(0, 32 * 1, Word_Size_32, BLUE, WHITE, "AC->Calculating...");
+            }
 
             /***************************噪声计算***************************/
             Calculate_Noise_After_Signal_Removal(&noise_calculator,
@@ -401,9 +417,6 @@ int main(void)
           }
         }
         /************************交流有效值计算************************/
-
-
-
         freq_calculated_flag = 1;
       }
 
