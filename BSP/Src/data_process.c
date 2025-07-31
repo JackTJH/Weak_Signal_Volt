@@ -259,8 +259,11 @@ float FFT_Calculate_Peak_Frequency(FFT_Processor_TypeDef *fft_proc, float *input
     // 计算复数幅度
     arm_cmplx_mag_f32(fft_proc->fft_output, fft_proc->fft_mag, FFT_LEN >> 1);
 
-    // 找到最大幅度值及其索引
-    arm_max_f32(fft_proc->fft_mag, FFT_LEN >> 1, &fft_proc->max_value, &fft_proc->max_index);
+    // 跳过直流分量（索引0），从索引1开始找到最大幅度值及其索引
+    arm_max_f32(&fft_proc->fft_mag[1], (FFT_LEN >> 1) - 1, &fft_proc->max_value, &fft_proc->max_index);
+
+    // 调整索引值（因为跳过了索引0，所以实际索引需要+1）
+    fft_proc->max_index += 1;
 
     // 计算峰值频率
     fft_proc->peak_frequency = (float)fft_proc->max_index * ((float)fft_proc->sample_rate / FFT_LEN);
